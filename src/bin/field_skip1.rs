@@ -1,4 +1,3 @@
-use ::std::error::Error;
 mod factory {
     use ::derive_builder::Builder;
     #[derive(Builder, Debug, Eq, PartialEq)]
@@ -11,8 +10,9 @@ mod factory {
         #[builder(setter(skip), default = "self.get_skip2_default()")]
         skip2: String,
         /// 就效果而言，【设置·字段·默认值】与【跳过·字段】是一样的。但是，
-        /// （1）前者是有`setter`而选择性地不调用；
-        /// （2）后者是完全没有定制的机会了，因为从字段到`setter`都没有被生成。
+        /// （1）前者是有`setter`而选择性地不调用。即，有能力而不用。
+        /// （2）后者是完全没有定制的机会了，因为从`TBuilder`字段到`setter`都没有被生成。即，没有能力。
+        /// 【类型·默认值】将在`TBuilder::build()`执行过程中，被用来填充字段值。
         #[builder(default)]
         skip3: u32,
     }
@@ -27,8 +27,9 @@ mod factory {
         }
     }
 }
+use ::std::error::Error;
+use factory::{Lorem, LoremBuilder};
 fn main() -> Result<(), Box<dyn Error>> {
-    use factory::{Lorem, LoremBuilder};
     let mut builder = LoremBuilder::default();
     let x: Lorem = builder.build()?;
     assert_eq!(x, Lorem::new(0, "123".into(), 0));
