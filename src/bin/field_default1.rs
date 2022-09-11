@@ -2,6 +2,7 @@ mod factory {
     use ::derive_builder::Builder;
     use ::std::{convert::From, num::ParseIntError};
     #[derive(Builder, Debug, Default, Eq, PartialEq)]
+    /// 装饰【结构体】作用于每个字段，但也要求结构体实现`Default trait`。
     #[builder(default)]
     pub struct Lorem {
         normal: u32,
