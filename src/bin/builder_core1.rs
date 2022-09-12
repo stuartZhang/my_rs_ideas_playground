@@ -1,4 +1,5 @@
 #![no_std]
+extern crate alloc;
 mod factory {
     use ::derive_builder::Builder;
     use ::serde::Serialize;
