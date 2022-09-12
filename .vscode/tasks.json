@@ -64,7 +64,7 @@
             "reveal": "always"
         },
         "group": {
-            "kind": "z",
+            "kind": "test",
             "isDefault": false
         },
         "problemMatcher": [{
