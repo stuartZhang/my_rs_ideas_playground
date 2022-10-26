@@ -22,23 +22,24 @@ mod data_structure {
     }
     impl Wrapper {
         delegate! {
-            to self.inner1 { // 委托至【指定·字段】上的【成员方法】
-                #[call(push)] // 修改·被代理成员方法名`push -> add`
+            to self.inner1 { // #4. 委托至【指定·字段】上的【成员方法】
+                #[call(push)] // #1. 修改·被代理成员方法名`push -> add`
                 pub fn add(&mut self, value: u32);
                 #[call(len)]
-                #[try_into(unwrap)] // 修改·被代理成员方法·的返回值类型`usize -> u64`。
+                #[try_into(unwrap)] // #2. 修改·被代理成员方法·的返回值类型`usize -> u64`。
                                     // 利用`TryFrom trait`对【成员方法】的返回值做类型转换，
-                                    // 并自动“拆箱”。
+                                    // 并自动“拆箱”。若缺省元属性值`unwrap`，便需要明文手动
+                                    // “拆箱”。
                 pub fn size(&self) -> u64;
-                // 忽略·委托成员方法·的返回值。
+                // #3. 忽略·委托成员方法·的返回值。
                 pub fn pop(&mut self);
             }
-            to self.inner2.borrow_mut() { // 委托至【指定·字段·表达式·返回值】上的【成员方法】
-                #[call(push_str)] // 修改·被代理成员方法名`push_str -> push`
+            to self.inner2.borrow_mut() { // #4. 委托至【指定·字段·表达式·返回值】上的【成员方法】
+                #[call(push_str)] // #1. 修改·被代理成员方法名`push_str -> push`
                 pub fn push(&mut self, val: &str);
             }
             to self.size {
-                #[into] // 修改·被代理成员方法·的返回值类型`i32 -> i64`。
+                #[into] // #2. 修改·被代理成员方法·的返回值类型`i32 -> i64`。
                         // 利用`From trait`对【成员方法】的返回值做类型转换。
                 pub fn pow(&self, exp: u32) -> i64;
             }

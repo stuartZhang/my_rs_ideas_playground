@@ -1,6 +1,56 @@
+/// 这是一个在【枚举类】`Enum`上，将部分【成员方法】委托给其【结构体·枚举值】
+/// 或【结构体·枚举值·表达式·返回值】的【成员方法】的例子。
+/// ---------------------------------------------------------------
+/// `delegate crate`的优点：“以【成员成员】为最小委托单元，简单直观”，而
+/// 缺点：“不能让【枚举类】`Enum`自动实现只有【结构体·枚举值】或【结构体·
+/// 枚举值·表达式·返回值】才具备的`trait`”。
+/// ---------------------------------------------------------------
+/// 涉及到的功能点包括
+/// （1）将【成员方法】委托于不同的【结构体·枚举值】或【结构体·枚举值·表达式·返回值】
 mod data_structure {
     use ::delegate::delegate;
     use ::derive_builder::Builder;
+    #[derive(Debug)]
+    pub enum Enum {
+        A(A),
+        B(B),
+        C {
+            a: A,
+            b: B,
+            c: C
+        }
+    }
+    impl Enum {
+        delegate! {
+            // #1. 委托至【结构体·枚举值】上的【成员方法】
+            // 宏展开后的完整形式
+            // ```rust
+            // match self {
+            //     Enum::A(a) => {a}.dbg_inner(),
+            //     Enum::B(b) => {println!("i am b"); b}.dbg_inner(),
+            //     Enum::C {c: C} => {c}.dbg_inner(),
+            // }
+            // ```
+            to match self {
+                Enum::A(a) => a,
+                Enum::B(b) => {
+                    println!("i am b");
+                    b
+                },
+                Enum::C {c, ..} => c,
+            } {
+                pub fn dbg_inner(&self) -> usize;
+            }
+            // 委托至【结构体·枚举值】上的【成员方法】
+            to match self {
+                Enum::C {a, ..} => a,
+                _ => D
+            } {
+                #[call(dbg_inner)]
+                pub fn dbg_inner_a(&self) -> usize;
+            }
+        }
+    }
     #[derive(Builder, Debug)]
     pub struct A {
         val_a: usize,
@@ -36,47 +86,6 @@ mod data_structure {
     impl D {
         pub fn dbg_inner(&self) -> usize {
             unreachable!()
-        }
-    }
-    #[derive(Debug)]
-    pub enum Enum {
-        A(A),
-        B(B),
-        C {
-            a: A,
-            b: B,
-            c: C
-        }
-    }
-    impl Enum {
-        delegate! {
-            // 委托至【结构体·枚举值】上的【成员方法】
-            // 宏展开后的完整形式
-            // ```rust
-            // match self {
-            //     Enum::A(a) => {a}.dbg_inner(),
-            //     Enum::B(b) => {println!("i am b"); b}.dbg_inner(),
-            //     Enum::C {c: C} => {c}.dbg_inner(),
-            // }
-            // ```
-            to match self {
-                Enum::A(a) => a,
-                Enum::B(b) => {
-                    println!("i am b");
-                    b
-                },
-                Enum::C {c, ..} => c,
-            } {
-                pub fn dbg_inner(&self) -> usize;
-            }
-            // 委托至【结构体·枚举值】上的【成员方法】
-            to match self {
-                Enum::C {a, ..} => a,
-                _ => D
-            } {
-                #[call(dbg_inner)]
-                pub fn dbg_inner_a(&self) -> usize;
-            }
         }
     }
 }
