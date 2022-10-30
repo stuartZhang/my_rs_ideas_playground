@@ -117,26 +117,26 @@ fn main() -> Result<(), Box<dyn Error>> {
     wrapper.pop();
     // #3. 预填·被代理成员方法·的【实参】
     dbg!(wrapper.polynomial(1));
-    // #7. 代理·异步成员方法
+    // #7. 代理·异步成员方法·为·异步成员方法
     //     （1）异步函数语法糖返回`Result<String, Box<dyn Error>>`
     dbg!(task::block_on(wrapper.load_cargo_toml1()).expect("文件加载失败"));
     dbg!(task::block_on(async {
         let content: Result<String, Box<dyn Error>> = wrapper.load_cargo_toml1().await;
         content
     }).expect("文件加载失败"));
-    // #7. 代理·异步成员方法
+    // #7. 代理·异步成员方法·为·普通成员方法
     //     （2）普通函数返回`Future<Output = Result<String, Box<dyn Error>>>`
     dbg!(task::block_on(async {
         let content: Result<String, Box<dyn Error>> = wrapper.load_cargo_toml2().await;
         content
     }).expect("文件加载失败"));
-    // #7. 代理·异步成员方法
+    // #7. 代理·异步成员方法·为·异步成员方法
     //     （3）异步函数语法糖返回`Result<String, Box<dyn Error>>`。但，在代理函数内不执行`.await`操作。
     dbg!(task::block_on(async {
         let content: Result<String, Box<dyn Error>> = wrapper.load_cargo_toml_fut1().await.await;
         content
     }).expect("文件加载失败"));
-    // #7. 代理·异步成员方法
+    // #7. 代理·异步成员方法·为·普通成员方法
     //     （4）普通函数返回`Future<Output = Result<String, Box<dyn Error>>>`。但，在代理函数内不执行`.await`操作。
     dbg!(task::block_on(async {
         let content: Result<String, Box<dyn Error>> = wrapper.load_cargo_toml_fut2().await;
