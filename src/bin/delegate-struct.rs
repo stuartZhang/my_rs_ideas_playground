@@ -13,11 +13,13 @@
 /// （3）预填·被代理成员方法·的【实参】— 支持【求值·表达式】与`self`引用
 /// （4）修改·被代理成员方法·的【返回值·类型】— 类型转换·需要·`From / TryFrom trait`实现。
 /// （5）忽略·被代理成员方法·的【返回值】
-/// （6）将【成员方法】委托于不同的【字段】或【字段·表达式·返回值】
+/// （6）将【成员方法】委托至不同的【字段】或【字段·表达式·返回值】
+/// （7）代理·异步成员方法
 mod data_structure {
+    use ::async_std::{fs, future::Future};
     use ::delegate::delegate;
     use ::derive_builder::Builder;
-    use ::std::{cell::RefCell, rc::Rc};
+    use ::std::{cell::RefCell, env, error::Error, rc::Rc};
     const BASE_INT: i32 = 32;
     #[derive(Builder, Debug)]
     pub struct Wrapper {
@@ -58,6 +60,24 @@ mod data_structure {
                 //     （1）求值·表达式
                 //     （2）`self`引用当前【结构体】实例
                 pub fn polynomial(&self, [self.inner1.len() as i32], [1 + BASE_INT], [self.size], y: i32) -> i32;
+                // #7. 代理·异步成员方法
+                //     （1）异步函数语法糖返回`Result<String, Box<dyn Error>>`
+                #[call(load_cargo_toml)]
+                pub async fn load_cargo_toml1(&self) -> Result<String, Box<dyn Error>>;
+                // #7. 代理·异步成员方法
+                //     （2）普通函数返回`Future<Output = Result<String, Box<dyn Error>>>`
+                #[call(load_cargo_toml)]
+                pub fn load_cargo_toml2<'a>(&'a self) -> impl Future<Output = Result<String, Box<dyn Error + 'static>>> + 'a;
+                // #7. 代理·异步成员方法
+                //     （3）异步函数语法糖返回`Result<String, Box<dyn Error>>`。但，在代理函数内不执行`.await`操作。
+                #[await(false)]
+                #[call(load_cargo_toml)]
+                pub async fn load_cargo_toml_fut1<'a>(&'a self) -> impl Future<Output = Result<String, Box<dyn Error + 'static>>> + 'a;
+                // #7. 代理·异步成员方法
+                //     （4）普通函数返回`Future<Output = Result<String, Box<dyn Error>>>`。但，在代理函数内不执行`.await`操作。
+                #[await(false)]
+                #[call(load_cargo_toml)]
+                pub fn load_cargo_toml_fut2<'a>(&'a self) -> impl Future<Output = Result<String, Box<dyn Error + 'static>>> + 'a;
             }
         }
     }
@@ -67,8 +87,15 @@ mod data_structure {
         fn polynomial(&self, a: i32, x: i32, b: i32, y: i32) -> i32 {
             a + x * x + b * y
         }
+        async fn load_cargo_toml(&self) -> Result<String, Box<dyn Error>> {
+            let mut cargo_file_path = env::current_dir()?;
+            cargo_file_path.push("Cargo.toml");
+            let contents = fs::read_to_string(cargo_file_path).await?;
+            Ok(contents)
+        }
     }
 }
+use ::async_std::task;
 use ::std::{cell::RefCell, error::Error, rc::Rc};
 use data_structure::WrapperBuilder;
 fn main() -> Result<(), Box<dyn Error>> {
@@ -90,6 +117,31 @@ fn main() -> Result<(), Box<dyn Error>> {
     wrapper.pop();
     // #3. 预填·被代理成员方法·的【实参】
     dbg!(wrapper.polynomial(1));
+    // #7. 代理·异步成员方法
+    //     （1）异步函数语法糖返回`Result<String, Box<dyn Error>>`
+    dbg!(task::block_on(wrapper.load_cargo_toml1()).expect("文件加载失败"));
+    dbg!(task::block_on(async {
+        let content: Result<String, Box<dyn Error>> = wrapper.load_cargo_toml1().await;
+        content
+    }).expect("文件加载失败"));
+    // #7. 代理·异步成员方法
+    //     （2）普通函数返回`Future<Output = Result<String, Box<dyn Error>>>`
+    dbg!(task::block_on(async {
+        let content: Result<String, Box<dyn Error>> = wrapper.load_cargo_toml2().await;
+        content
+    }).expect("文件加载失败"));
+    // #7. 代理·异步成员方法
+    //     （3）异步函数语法糖返回`Result<String, Box<dyn Error>>`。但，在代理函数内不执行`.await`操作。
+    dbg!(task::block_on(async {
+        let content: Result<String, Box<dyn Error>> = wrapper.load_cargo_toml_fut1().await.await;
+        content
+    }).expect("文件加载失败"));
+    // #7. 代理·异步成员方法
+    //     （4）普通函数返回`Future<Output = Result<String, Box<dyn Error>>>`。但，在代理函数内不执行`.await`操作。
+    dbg!(task::block_on(async {
+        let content: Result<String, Box<dyn Error>> = wrapper.load_cargo_toml_fut2().await;
+        content
+    }).expect("文件加载失败"));
     println!("wrapper = {:?}", wrapper);
     Ok(())
 }
