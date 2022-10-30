@@ -60,20 +60,20 @@ mod data_structure {
                 //     （1）求值·表达式
                 //     （2）`self`引用当前【结构体】实例
                 pub fn polynomial(&self, [self.inner1.len() as i32], [1 + BASE_INT], [self.size], y: i32) -> i32;
-                // #7. 代理·异步成员方法
+                // #7. 代理·异步成员方法·为·异步成员方法
                 //     （1）异步函数语法糖返回`Result<String, Box<dyn Error>>`
                 #[call(load_cargo_toml)]
                 pub async fn load_cargo_toml1(&self) -> Result<String, Box<dyn Error>>;
-                // #7. 代理·异步成员方法
+                // #7. 代理·异步成员方法·为·普通成员方法
                 //     （2）普通函数返回`Future<Output = Result<String, Box<dyn Error>>>`
                 #[call(load_cargo_toml)]
                 pub fn load_cargo_toml2<'a>(&'a self) -> impl Future<Output = Result<String, Box<dyn Error + 'static>>> + 'a;
-                // #7. 代理·异步成员方法
+                // #7. 代理·异步成员方法·为·异步成员方法
                 //     （3）异步函数语法糖返回`Result<String, Box<dyn Error>>`。但，在代理函数内不执行`.await`操作。
                 #[await(false)]
                 #[call(load_cargo_toml)]
                 pub async fn load_cargo_toml_fut1<'a>(&'a self) -> impl Future<Output = Result<String, Box<dyn Error + 'static>>> + 'a;
-                // #7. 代理·异步成员方法
+                // #7. 代理·异步成员方法·为·普通成员方法
                 //     （4）普通函数返回`Future<Output = Result<String, Box<dyn Error>>>`。但，在代理函数内不执行`.await`操作。
                 #[await(false)]
                 #[call(load_cargo_toml)]
