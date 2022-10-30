@@ -15,11 +15,12 @@
 /// （5）忽略·被代理成员方法·的【返回值】
 /// （6）将【成员方法】委托至不同的【字段】或【字段·表达式·返回值】
 /// （7）代理·异步成员方法
-mod data_structure {
-    use ::async_std::{fs, future::Future};
+mod delegating_structure {
+    use ::async_std::future::Future;
     use ::delegate::delegate;
     use ::derive_builder::Builder;
-    use ::std::{cell::RefCell, env, error::Error, rc::Rc};
+    use ::std::{cell::RefCell, error::Error, rc::Rc};
+    use crate::delegated_structure::Polynomial;
     const BASE_INT: i32 = 32;
     #[derive(Builder, Debug)]
     pub struct Wrapper {
@@ -81,13 +82,17 @@ mod data_structure {
             }
         }
     }
+}
+mod delegated_structure {
+    use ::async_std::fs;
+    use ::std::{env, error::Error};
     #[derive(Clone, Debug, Default)]
     pub struct Polynomial;
     impl Polynomial {
-        fn polynomial(&self, a: i32, x: i32, b: i32, y: i32) -> i32 {
+        pub fn polynomial(&self, a: i32, x: i32, b: i32, y: i32) -> i32 {
             a + x * x + b * y
         }
-        async fn load_cargo_toml(&self) -> Result<String, Box<dyn Error>> {
+        pub async fn load_cargo_toml(&self) -> Result<String, Box<dyn Error>> {
             let mut cargo_file_path = env::current_dir()?;
             cargo_file_path.push("Cargo.toml");
             let contents = fs::read_to_string(cargo_file_path).await?;
@@ -97,7 +102,7 @@ mod data_structure {
 }
 use ::async_std::task;
 use ::std::{cell::RefCell, error::Error, rc::Rc};
-use data_structure::WrapperBuilder;
+use delegating_structure::WrapperBuilder;
 fn main() -> Result<(), Box<dyn Error>> {
     let inner2 = Rc::new(RefCell::new("1".to_string()));
     let mut wrapper = WrapperBuilder::default()

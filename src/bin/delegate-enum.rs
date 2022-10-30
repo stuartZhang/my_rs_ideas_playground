@@ -9,9 +9,9 @@
 /// ---------------------------------------------------------------
 /// 涉及到的功能点包括
 /// （1）将【成员方法】委托于不同的【结构体·枚举值】或【结构体·枚举值·表达式·返回值】
-mod data_structure {
+mod delegating_structure {
     use ::delegate::delegate;
-    use ::derive_builder::Builder;
+    use crate::delegated_structure::{A, B, C, D};
     #[derive(Debug)]
     pub enum Enum {
         A(A),
@@ -53,6 +53,9 @@ mod data_structure {
             }
         }
     }
+}
+mod delegated_structure {
+    use ::derive_builder::Builder;
     #[derive(Builder, Debug)]
     pub struct A {
         val_a: usize,
@@ -84,7 +87,7 @@ mod data_structure {
             3
         }
     }
-    struct D;
+    pub struct D;
     impl D {
         pub fn dbg_inner(&self) -> usize {
             unreachable!()
@@ -92,7 +95,8 @@ mod data_structure {
     }
 }
 use ::std::error::Error;
-use data_structure::{ABuilder, BBuilder, CBuilder, Enum};
+use delegating_structure::{Enum};
+use delegated_structure::{ABuilder, BBuilder, CBuilder};
 fn main() -> Result<(), Box<dyn Error>> {
     let a = Enum::A(ABuilder::default().val_a(12).build()?);
     let b = Enum::B(BBuilder::default().val_b("abc").build()?);
