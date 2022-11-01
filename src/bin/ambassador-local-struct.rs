@@ -62,6 +62,37 @@ mod delegating_structure2 {
         dog: Pet
     }
 }
+/// 【自己·委托·自己】提供对`trait Trait`的`trait methods`与`inherent methods`双份实现。
+/// 【使用场景】需要满足如下几个条件：
+///     1. `lib target`工程
+///     2. 版本升级时，新版本·重构了·导出`pub`结构体`struct`。
+///     3. 重构目标：使用不同的`trait`对【导出·结构体】的【成员方法】做分类
+///         3.1 被用作分类的`trait`既不包含“关联·类型”也不包含“关联·常量”。
+///     4. 要求新版本的【导出·结构体】
+///         4.1 既适用于【旧版】的具体类型·普通函数·调用方式`func_a(_: Cat)`
+///         4.2 也适用于【新版】的`trait bound`泛型函数·调用方式`func_a<T: Shout>(_: T)`
+/// 特点：因为`inherent methods`的`method resolution`优先级更高，所以若没有明文地使用
+///       `<Type as Trait>::method(&self, ...)`语法或`trait Object`，那么`trait methods`
+///       几乎不会被调用到。
+mod delegating_structure3 {
+    use ::ambassador::Delegate;
+    use ::derive_builder::Builder;
+    use crate::delegated_structure::Shout;
+    #[derive(Builder, Debug)]
+    #[derive(Delegate)]
+    #[delegate(Shout, target = "self")] // 它会给`Cat`结构体再生成一个`impl Shout for Cat {...}`
+                                        // 的`trait methods`实现块。
+    pub struct Cat {
+        aggressive: bool
+    }
+    ///【手写】`Inherent Methods`实现块 - 适用于旧版本`lib`调用端的`func_a(_: Cat)`普通函数
+    impl Cat {
+        pub fn shout(&self, input: &str) -> String {
+            format!("[aggressive = {}] {} - meow!", self.aggressive, input)
+        }
+    }
+    //【生成】`trait methods`实现块 - 适用于新版本`lib`调用端的`func_a<T: Shout>(_: T)`泛型函数
+}
 use ::std::error::Error;
 use delegated_structure::{PetBuilder, Shout};
 fn main() -> Result<(), Box<dyn Error>> {
@@ -84,6 +115,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             .dog(PetBuilder::default().name("b").build()?)
             .build()?;
         dbg!(wrapper.shout("input"));
+    }
+    { // 【自己·委托·自己】提供对`trait Trait`的`trait methods`与`inherent methods`双份实现。
+        use delegating_structure3::{Cat, CatBuilder};
+        let cat = CatBuilder::default().aggressive(true).build()?;
+        dbg!(cat.shout("input"));                    // 调用的`inherent method`实现
+        dbg!(<Cat as Shout>::shout(&cat, "input2")); // 调用的`trait method`实现
+                                                     // 这两者不一样。
     }
     Ok(())
 }
