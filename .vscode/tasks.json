@@ -31,6 +31,8 @@
         "args": [
             "run",
             "-v",
+            "--no-default-features",
+            "${input:ambassador-where}",
             "--bin",
             "${fileBasenameNoExtension}"
         ],
@@ -127,5 +129,15 @@
                 }
             }
         ]
-    }]
+    }],
+    "inputs": [{
+        "type": "pickString",
+        "id": "ambassador-where",
+        "description": "ambassador where?",
+        "options": [
+          "--no-default-features",
+          "--features=ambassador-where"
+        ],
+        "default": "--features=ambassador-where"
+      }]
 }
