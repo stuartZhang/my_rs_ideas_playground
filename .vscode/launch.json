@@ -12,7 +12,7 @@
         "sourceLanguages": ["rust"],
         "cargo": {
             "args": [
-                "run",
+                "build",
                 "--no-default-features",
                 "${input:ambassador-where}",
                 "--bin",

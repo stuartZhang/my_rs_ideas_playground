@@ -68,7 +68,7 @@ mod delegating_structure2 {
         dog: Pet
     }
 }
-/// 【自己·委托·自己】对`trait Trait`提供`trait methods`与`inherent methods`的双份实现。
+/// 【自己·委托·自己】对【委托`trait`】提供`trait methods`与`inherent methods`的双份实现。
 /// 【使用场景】需要满足如下几个条件：
 ///     1. `lib target`工程
 ///     2. 版本升级时，新版本·重构了·导出`pub`结构体`struct`。
@@ -99,10 +99,10 @@ mod delegating_structure3 {
     }
     //【生成】`trait methods`实现块 - 适用于新版本`lib`调用端的`func_a<T: Shout>(_: T)`泛型函数
 }
-/// 【泛型·结构体】委托至【泛型·类型·字段】。其中，【泛型·字段】的【具体类型】需要满足两个条件：
-/// （1）实现被委托的`trait` — 在本例中是`Shout trait`
+/// 【泛型·结构体】委托至【泛型·类型·字段】。其中，作为委托目标的【泛型·字段】【具体类型】需要满足两个条件：
+/// （1）实现【委托`trait`】 — 在本例中是`Shout trait`
 ///      - 该限制是默认开启的。另一个属性`#[delegate(automatic_where_clause = "false")]`可被用来关闭它。
-/// （2）实现由`#[delegate(where)]`属性指定的`trait` — 在本例中是`Display trait`
+/// （2）实现由`#[delegate(where)]`属性键-值对指定的`trait bounds` — 在本例中是`Display trait`
 ///      - 此限制是默认关闭的。
 mod delegating_structure4 {
     use ::ambassador::Delegate;
@@ -114,11 +114,13 @@ mod delegating_structure4 {
     use crate::delegated_structure::Shout;
     #[derive(Builder, Debug)]
     #[derive(Delegate)]
-    /// 【泛型·字段`cat`】至少得实现了被委托的`trait`。
+    /// (1) 【泛型·字段`cat`】至少得实现【委托`trait`】。
     #[cfg_attr(not(feature = "ambassador-where"), delegate(Shout))]
-    /// 若`where`属性键-值对被设置，【泛型·字段`cat`】还得满足额外的`trait bounds`。
+    /// (2) 若`where`属性键-值对被设置，【泛型·字段`cat`】还得满足额外的`trait bounds`。
     #[cfg_attr(feature = "ambassador-where", delegate(Shout, where = "T: Display"))]
-    pub struct FieldWrapper<T> /* 等效于 where T: Shout 或 where T: Shout + Display */ {
+    pub struct FieldWrapper<T> /* 等效于
+        (1) where T: Shout 或
+        (2) where T: Shout + Display */ {
         cat: T
     }
     #[cfg(feature = "ambassador-where")]
@@ -165,8 +167,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         dbg!(&cat);
         #[cfg(feature = "ambassador-where")]
         dbg!(cat.to_string());
-        let wrapper2 = FieldWrapperBuilder::default().cat(cat).build()?;
-        dbg!(wrapper2.shout("input"));
+        let wrapper = FieldWrapperBuilder::default().cat(cat).build()?;
+        dbg!(wrapper.shout("input"));
     }
     Ok(())
 }
