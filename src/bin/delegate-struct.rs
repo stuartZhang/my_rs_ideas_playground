@@ -47,9 +47,11 @@ mod delegating_structure {
             to self.inner2.borrow_mut() { // #6. 委托至【指定·字段·表达式·返回值】上的【成员方法】
                 #[call(push_str)] // #1. 修改·被代理成员方法名`push_str -> push`
                 pub fn push(&mut self, val: &str);
-                #[call(push)] // #2. 修改·被代理成员方法·的【形参类型】`u8 -> char`
-                              //     利用`From trait`对【成员方法】的【形参】做类型转换。
-                pub fn push_u8(&mut self, #[into] val: u8);
+                #[call(push)]
+                pub fn push_u8(&mut self,
+                    #[into] // #2. 修改·被代理成员方法·的【形参类型】`u8 -> char`
+                            //     利用`From trait`对【成员方法】的【形参】做类型转换。
+                    val: u8);
             }
             to self.size { // #6. 委托至【指定·字段】上的【成员方法】
                 #[into] // #4. 修改·被代理成员方法·的返回值类型`i32 -> i64`。
