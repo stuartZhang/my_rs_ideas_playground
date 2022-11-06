@@ -25,7 +25,7 @@ mod delegated_structure {
             &self.name
         }
     }
-    /// 【委托·目标·类型】得实现【委托`trait`】。
+    /// 【委托·目标·字段·类型】得实现【委托`trait`】。
     impl Shout for Pet {
         fn shout(&self, input: &str) -> String {
             format!("[{}] {} - meow!", self.name, input)
@@ -129,8 +129,8 @@ mod delegating_structure4 {
         (2) where T: Shout + Display */ {
         cat: T
     }
-    /// #1. 【委托·目标·类型】至少得实现【委托`trait`】。
-    /// #2. 【委托·目标·类型】还得实现由`#[delegate(where)]`属性键-值对额外指定的`trait bounds`
+    /// #1. 【委托·目标·字段·类型】至少得实现【委托`trait`】。
+    /// #2. 【委托·目标·字段·类型】还得实现由`#[delegate(where)]`属性键-值对额外指定的`trait bounds`
     #[cfg(feature = "ambassador-where")]
     impl Display for Pet {
         fn fmt(&self, f: &mut Formatter<'_>) -> Result {
@@ -141,8 +141,8 @@ mod delegating_structure4 {
 }
 /// 委托【泛型`trait`】。其中，【`trait`泛型参数】（含【限定条件】）
 /// (1) 既要·被注册于`#[delegate(generics)]`属性键-值对
-/// (2) 还要·被添加于【委托·目标·类型】的`trait`实现块上。譬如，`impl<T> ShoutGeneric<T> for Pet where T: *** {`。
-/// (3) 由`Ambassador crate`派生的过程宏·会自动“同步”【委托·目标·类型】`trait`实现块
+/// (2) 还要·被添加于【委托·目标·字段·类型】的`trait`实现块上。譬如，`impl<T> ShoutGeneric<T> for Pet where T: *** {`。
+/// (3) 由`Ambassador crate`派生的过程宏·会自动“同步”【委托·目标·字段·类型】`trait`实现块
 ///     上的【`trait`泛型参数】（含【限定条件】）至【委托·类型】的`trait`实现块上。
 mod delegating_structure5 {
     use ::ambassador::Delegate;
@@ -156,7 +156,7 @@ mod delegating_structure5 {
     pub struct Wrapper {
         cat: Pet
     }
-    /// #2. 【`trait`泛型参数】（含【限定条件】）被添加于【委托·目标·类型】的
+    /// #2. 【`trait`泛型参数】（含【限定条件】）被添加于【委托·目标·字段·类型】的
     ///     `trait`实现块上。
     impl<'a, 'b, T> ShoutGeneric<'a, 'b, T, String> for Pet where 'a: 'b, T: Display {
         fn shout(&self, input1: &'a str, input2: &'b T) -> String {
@@ -164,6 +164,32 @@ mod delegating_structure5 {
         }
     }
     // #3. 给【委托·类型】生成【`trait`实现块】和添加【`trait`泛型参数】（含【限定条件】）
+}
+/// 委托至【智能·指针】（或称“间接”委托）。即，
+/// （1）【智能·指针】类型自身并未直接实现【委托`trait`】。
+/// （2）但由【智能·指针】引用的内部类型却实现了【委托`trait`】。
+/// （3）借助于`.`操作符的【自动解引用】语法糖，【委托`trait`】的【成员方法】被允许从
+///     【智能·指针】实例直接“点”出并调用。
+/// 默认情况下，`Ambassador crate`要求【委托·目标（字段）类型】与【委托·类型】皆实现
+/// 相同的【委托`trait`】。
+/// `#[delegate(automatic_where_clause = "false")]`属性可用来用选择退出这个限制。
+/// 它可以被理解为对`#[delegate_to_methods]`针对`Deref::deref()`与`DerefMut::deref_mut()`
+/// 场景的语法糖。
+mod delegating_structure6 {
+    use ::ambassador::Delegate;
+    use ::derive_builder::Builder;
+    use ::std::fmt::Debug;
+    use crate::delegated_structure::Shout;
+    #[derive(Builder)]
+    #[builder(pattern = "owned")]
+    #[derive(Delegate)]
+    /// 【委托·目标·字段·类型】`Box<T>`自身并没有实现【委托`trait`】，虽然它被解引用后可调
+    /// 用【委托`trait`】的成员方法。
+    #[delegate(Shout, automatic_where_clause = "false")]
+    pub struct BoxedPet {
+        pet: Box<dyn Shout>
+    }
+    // 给【委托·类型】自动生成`trait`实现块
 }
 use ::std::error::Error;
 use delegated_structure::{PetBuilder, Shout, ShoutGeneric};
@@ -212,6 +238,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         let wrapper = WrapperBuilder::default().cat(cat).build()?;
         let addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
         dbg!(<Wrapper as ShoutGeneric<'_, '_, IpAddr, _>>::shout(&wrapper, "input1", &addr));
+    }
+    { // 委托至【智能·指针】（或称“间接”委托）
+        use delegating_structure6::BoxedPetBuilder;
+        let cat = PetBuilder::default().name("a").build()?;
+        let boxed_pet = BoxedPetBuilder::default().pet(Box::new(cat)).build()?;
+        dbg!(boxed_pet.shout("input"));
     }
     Ok(())
 }
