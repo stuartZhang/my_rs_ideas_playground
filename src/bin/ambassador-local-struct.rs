@@ -179,9 +179,9 @@ mod delegating_structure6 {
     use ::ambassador::Delegate;
     use ::derive_builder::Builder;
     use ::std::fmt::Debug;
-    use crate::delegated_structure::Shout;
+    use crate::delegated_structure::{Pet, Shout};
     #[derive(Builder)]
-    #[builder(pattern = "owned")]
+    #[builder(pattern = "owned", setter(into))]
     #[derive(Delegate)]
     /// 【委托·目标·字段·类型】`Box<T>`自身并没有实现【委托`trait`】，虽然它被解引用后可调
     /// 用【委托`trait`】的成员方法。
@@ -189,7 +189,44 @@ mod delegating_structure6 {
     pub struct BoxedPet {
         pet: Box<dyn Shout>
     }
+    impl From<Pet> for Box<dyn Shout> {
+        fn from(pet: Pet) -> Self {
+            Box::new(pet)
+        }
+    }
     // 给【委托·类型】自动生成`trait`实现块
+}
+/// 委托至【成员方法·返回值】。其中，
+/// （1）【成员方法】也被称为“委托·目标·成员方法”`target method`。
+/// （2）【成员方法】既可以是`inherent method`也可以是`trait method`。
+/// 若【委托·目标·成员方法】自身就是`trait method`，那么它就不能够与【委托`trait`】成员
+/// 方法同名。
+/// `#[delegate(...)]`提供了三个属性键-值对`target_ref`, `target_mut`, `target_owned`
+/// （1）分别对应于【委托`trait`】内三类“接受者·类型”（`&self`, `&mut self`, `self`）的成员方法
+/// （2）分别对应于三款样式的成员方法签名
+///     - target_ref   => fn get_delegate_target(&self)         -> &X
+///     - target_mut   => fn get_delegate_target_mut(&mut self) -> &mut X
+///     - target_owned => fn get_delegate_target_owned(self)    -> X
+/// （3）对它们，按需设置就好，不必每次都全部配置。
+/// `#[delegate]`与`#[delegate_to_methods]`被修饰于`impl`块，而不是类型定义。
+mod delegating_structure7 {
+    use ::ambassador::delegate_to_methods;
+    use ::derive_builder::Builder;
+    use ::std::ops::Deref;
+    use crate::delegated_structure::{Pet, Shout};
+    /// 注意：在类型定义上，没有`#[delegate]`属性。
+    #[derive(Builder, Debug)]
+    pub struct BoxedPet {
+        #[builder(setter(into))]
+        pet: Box<Pet>
+    }
+    #[delegate_to_methods]
+    #[delegate(Shout, target_ref = "get_delegate_target")]
+    impl BoxedPet {
+        fn get_delegate_target(&self) -> &Pet {
+            self.pet.deref()
+        }
+    }
 }
 use ::std::error::Error;
 use delegated_structure::{PetBuilder, Shout, ShoutGeneric};
@@ -242,7 +279,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     { // 委托至【智能·指针】（或称“间接”委托）
         use delegating_structure6::BoxedPetBuilder;
         let cat = PetBuilder::default().name("a").build()?;
-        let boxed_pet = BoxedPetBuilder::default().pet(Box::new(cat)).build()?;
+        let boxed_pet = BoxedPetBuilder::default().pet(cat).build()?;
+        dbg!(boxed_pet.shout("input"));
+    }
+    { // 委托至【成员方法·返回值】
+        use delegating_structure7::BoxedPetBuilder;
+        let cat = PetBuilder::default().name("a").build()?;
+        let boxed_pet = BoxedPetBuilder::default().pet(cat).build()?;
         dbg!(boxed_pet.shout("input"));
     }
     Ok(())

@@ -31,6 +31,7 @@
         "args": [
             "run",
             "-v",
+            "--offline",
             "--no-default-features",
             "${input:ambassador-where}",
             "--bin",
