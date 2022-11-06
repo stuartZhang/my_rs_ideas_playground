@@ -1,16 +1,28 @@
+
+mod remote_structure {
+    use ::std::fmt::Display;
+    pub trait Shout {
+        fn shout(&self, input: &str) -> String;
+    }
+    pub trait ShoutGeneric<'a, 'b, T, R> where 'a: 'b, T: Display, R: Display {
+        fn shout(&self, input1: &'a str, input2: &'b T) -> R;
+    }
+}
 /// `trait`先定义，`strut / enum`再定义的次序很重要。
 /// - 否则，`ambassador crate`给`trait`生成的【过程宏】对`struct / enum`定义不可见。
 /// - 相反，对于【远程`trait`】，此定义的先后次序就无所谓了。
 #[macro_use]
 mod delegated_structure {
-    use ::ambassador::delegatable_trait;
+    use ::ambassador::delegatable_trait_remote;
     use ::derive_builder::Builder;
-    use ::std::fmt::Display;
-    #[delegatable_trait]
+    use crate::remote_structure::Shout;
+    /// 使得非本地定义的`trait`对本地定义的【委托】可用。
+    #[delegatable_trait_remote]
     pub trait Shout {
         fn shout(&self, input: &str) -> String;
     }
-    #[delegatable_trait]
+    /// 使得非本地定义的`trait`对本地定义的【委托】可用。
+    #[delegatable_trait_remote]
     pub trait ShoutGeneric<'a, 'b, T, R> where 'a: 'b, T: Display, R: Display {
         fn shout(&self, input1: &'a str, input2: &'b T) -> R;
     }
@@ -36,7 +48,7 @@ mod delegated_structure {
 mod delegating_structure1 {
     use ::ambassador::Delegate;
     use ::derive_builder::Builder;
-    use crate::delegated_structure::{Pet, Shout};
+    use crate::{delegated_structure::Pet, remote_structure::Shout};
     /// 标记【本地】`tuple struct`为【委托类】
     /// 在给【单·字段】结构体做委托时，不需要明文指定
     /// `#[delegate(...)]`元属性的`target`键-值对。
@@ -58,7 +70,7 @@ mod delegating_structure1 {
 mod delegating_structure2 {
     use ::ambassador::Delegate;
     use ::derive_builder::Builder;
-    use crate::delegated_structure::{Pet, Shout};
+    use crate::{delegated_structure::Pet, remote_structure::Shout};
     /// 标记【本地】`tuple struct`为【委托类】
     /// 注意：`#[delegate(...)]`元属性的`target`键-值对可以是序号
     #[derive(Delegate)]
@@ -91,7 +103,7 @@ mod delegating_structure2 {
 mod delegating_structure3 {
     use ::ambassador::Delegate;
     use ::derive_builder::Builder;
-    use crate::delegated_structure::Shout;
+    use crate::remote_structure::Shout;
     #[derive(Builder, Debug)]
     #[derive(Delegate)]
     #[delegate(Shout, target = "self")] // 它会给`Cat`结构体再生成一个`impl Shout for Cat {...}`
@@ -119,7 +131,7 @@ mod delegating_structure4 {
     use ::std::fmt::{Display, Formatter, Result};
     #[cfg(feature = "ambassador-where")]
     use crate::delegated_structure::Pet;
-    use crate::delegated_structure::Shout;
+    use crate::remote_structure::Shout;
     #[derive(Builder, Debug)]
     #[derive(Delegate)]
     #[cfg_attr(not(feature = "ambassador-where"), delegate(Shout))]
@@ -148,7 +160,7 @@ mod delegating_structure5 {
     use ::ambassador::Delegate;
     use ::derive_builder::Builder;
     use ::std::fmt::Display;
-    use crate::delegated_structure::{Pet, ShoutGeneric};
+    use crate::{delegated_structure::Pet, remote_structure::ShoutGeneric};
     #[derive(Builder, Debug)]
     #[derive(Delegate)]
     /// #1. 【`trait`泛型参数】（含【限定条件】）被注册于`#[delegate(generics)]`属性键-值对
@@ -179,7 +191,7 @@ mod delegating_structure6 {
     use ::ambassador::Delegate;
     use ::derive_builder::Builder;
     use ::std::fmt::Debug;
-    use crate::delegated_structure::{Pet, Shout};
+    use crate::{delegated_structure::Pet, remote_structure::Shout};
     #[derive(Builder)]
     #[builder(pattern = "owned", setter(into))]
     #[derive(Delegate)]
@@ -213,7 +225,7 @@ mod delegating_structure7 {
     use ::ambassador::delegate_to_methods;
     use ::derive_builder::Builder;
     use ::std::ops::Deref;
-    use crate::delegated_structure::{Pet, Shout};
+    use crate::{delegated_structure::Pet, remote_structure::Shout};
     /// 注意：在类型定义上，没有`#[delegate]`属性。
     #[derive(Builder, Debug)]
     pub struct BoxedPet {
@@ -229,7 +241,8 @@ mod delegating_structure7 {
     }
 }
 use ::std::error::Error;
-use delegated_structure::{PetBuilder, Shout, ShoutGeneric};
+use delegated_structure::PetBuilder;
+use remote_structure::{Shout, ShoutGeneric};
 fn main() -> Result<(), Box<dyn Error>> {
     { // 【单字段·结构体】委托
         use delegating_structure1::{FieldWrapperBuilder, TupleWrapper};
