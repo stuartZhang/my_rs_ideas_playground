@@ -217,7 +217,7 @@ mod delegating_structure5 {
 /// 默认情况下，`Ambassador crate`要求【委托·目标（字段）类型】与【委托·类型】皆实现
 /// 相同的【委托`trait`】。
 /// `#[delegate(automatic_where_clause = "false")]`属性可用来用选择退出这个限制。
-/// 它可以被理解为对`#[delegate_to_methods]`针对`Deref::deref()`与`DerefMut::deref_mut()`
+/// 它可以被理解为`#[delegate_to_remote_methods]`针对`Deref::deref()`与`DerefMut::deref_mut()`
 /// 场景的语法糖。
 mod delegating_structure6 {
     use ::ambassador::delegate_remote;
@@ -248,24 +248,22 @@ mod delegating_structure6 {
 ///     - target_mut   => fn get_delegate_target_mut(&mut self) -> &mut X
 ///     - target_owned => fn get_delegate_target_owned(self)    -> X
 /// （3）对它们，按需设置就好，不必每次都全部配置。
-/// `#[delegate]`与`#[delegate_to_methods]`被修饰于`impl`块，而不是类型定义。
+/// `#[delegate]`与`#[delegate_to_remote_methods]`被修饰于`impl`块，而不是类型定义。
 mod delegating_structure7 {
-    use ::ambassador::delegate_to_methods;
-    use ::derive_builder::Builder;
+    use ::ambassador::delegate_to_remote_methods;
     use ::std::ops::Deref;
-    use crate::remote_structure::{Pet, Shout};
-    /// 注意：在类型定义上，没有`#[delegate]`属性。
-    #[derive(Builder, Debug)]
-    pub struct BoxedPet {
-        #[builder(setter(into))]
-        pet: Box<Pet>
-    }
-    #[delegate_to_methods]
-    #[delegate(Shout, target_ref = "get_delegate_target")]
-    impl BoxedPet {
+    use crate::remote_structure::{Pet, Shout, TargetMethodWrapper};
+    //（1）先单独定义`target method`。
+    impl TargetMethodWrapper {
         fn get_delegate_target(&self) -> &Pet {
             self.pet.deref()
         }
+    }
+    //（2）再委托`trait`实现·给该成员方法的返回值。
+    #[delegate_to_remote_methods]
+    #[delegate(Shout, target_ref = "get_delegate_target")]
+    impl TargetMethodWrapper {
+        fn get_delegate_target(&self) -> &Pet;
     }
 }
 use ::std::error::Error;
@@ -324,9 +322,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         dbg!(boxed_pet.shout("input"));
     }
     { // 委托至【成员方法·返回值】
-        use delegating_structure7::BoxedPetBuilder;
+        use remote_structure::TargetMethodWrapperBuilder;
         let cat = PetBuilder::default().name("a").build()?;
-        let boxed_pet = BoxedPetBuilder::default().pet(cat).build()?;
+        let boxed_pet = TargetMethodWrapperBuilder::default().pet(cat).build()?;
         dbg!(boxed_pet.shout("input"));
     }
     Ok(())

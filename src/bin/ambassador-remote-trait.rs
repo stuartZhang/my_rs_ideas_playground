@@ -186,7 +186,7 @@ mod delegating_structure5 {
 /// 默认情况下，`Ambassador crate`要求【委托·目标（字段）类型】与【委托·类型】皆实现
 /// 相同的【委托`trait`】。
 /// `#[delegate(automatic_where_clause = "false")]`属性可用来用选择退出这个限制。
-/// 它可以被理解为对`#[delegate_to_methods]`针对`Deref::deref()`与`DerefMut::deref_mut()`
+/// 它可以被理解为`#[delegate_to_methods]`针对`Deref::deref()`与`DerefMut::deref_mut()`
 /// 场景的语法糖。
 mod delegating_structure6 {
     use ::ambassador::Delegate;
