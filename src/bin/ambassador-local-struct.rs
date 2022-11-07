@@ -1,6 +1,5 @@
-/// `trait`先定义，`strut / enum`再定义的次序很重要。
-/// - 否则，`ambassador crate`给`trait`生成的【过程宏】对`struct / enum`定义不可见。
-/// - 相反，对于【远程`trait`】，此定义的先后次序就无所谓了。
+/// 【`trait`先定义，`strut / enum`再定义】的次序很重要。否则，`ambassador crate`
+/// 给`trait`生成的【过程宏】对`struct / enum`定义不可见。
 #[macro_use]
 mod delegated_structure {
     use ::ambassador::delegatable_trait;
@@ -25,7 +24,7 @@ mod delegated_structure {
             &self.name
         }
     }
-    /// 【委托·目标·字段·类型】得实现【委托`trait`】。
+    /// 【委托·目标（字段）类型】得实现【委托`trait`】。
     impl Shout for Pet {
         fn shout(&self, input: &str) -> String {
             format!("[{}] {} - meow!", self.name, input)
@@ -129,8 +128,8 @@ mod delegating_structure4 {
         (2) where T: Shout + Display */ {
         cat: T
     }
-    /// #1. 【委托·目标·字段·类型】至少得实现【委托`trait`】。
-    /// #2. 【委托·目标·字段·类型】还得实现由`#[delegate(where)]`属性键-值对额外指定的`trait bounds`
+    /// #1. 【委托·目标（字段）类型】至少得实现【委托`trait`】。
+    /// #2. 【委托·目标（字段）类型】还得实现由`#[delegate(where)]`属性键-值对额外指定的`trait bounds`
     #[cfg(feature = "ambassador-where")]
     impl Display for Pet {
         fn fmt(&self, f: &mut Formatter<'_>) -> Result {
@@ -141,8 +140,8 @@ mod delegating_structure4 {
 }
 /// 委托【泛型`trait`】。其中，【`trait`泛型参数】（含【限定条件】）
 /// (1) 既要·被注册于`#[delegate(generics)]`属性键-值对
-/// (2) 还要·被添加于【委托·目标·字段·类型】的`trait`实现块上。譬如，`impl<T> ShoutGeneric<T> for Pet where T: *** {`。
-/// (3) 由`Ambassador crate`派生的过程宏·会自动“同步”【委托·目标·字段·类型】`trait`实现块
+/// (2) 还要·被添加于【委托·目标（字段）类型】的`trait`实现块上。譬如，`impl<T> ShoutGeneric<T> for Pet where T: *** {`。
+/// (3) 由`Ambassador crate`派生的过程宏·会自动“同步”【委托·目标（字段）类型】`trait`实现块
 ///     上的【`trait`泛型参数】（含【限定条件】）至【委托·类型】的`trait`实现块上。
 mod delegating_structure5 {
     use ::ambassador::Delegate;
@@ -156,7 +155,7 @@ mod delegating_structure5 {
     pub struct Wrapper {
         cat: Pet
     }
-    /// #2. 【`trait`泛型参数】（含【限定条件】）被添加于【委托·目标·字段·类型】的
+    /// #2. 【`trait`泛型参数】（含【限定条件】）被添加于【委托·目标（字段）类型】的
     ///     `trait`实现块上。
     impl<'a, 'b, T> ShoutGeneric<'a, 'b, T, String> for Pet where 'a: 'b, T: Display {
         fn shout(&self, input1: &'a str, input2: &'b T) -> String {
@@ -178,12 +177,11 @@ mod delegating_structure5 {
 mod delegating_structure6 {
     use ::ambassador::Delegate;
     use ::derive_builder::Builder;
-    use ::std::fmt::Debug;
     use crate::delegated_structure::{Pet, Shout};
     #[derive(Builder)]
     #[builder(pattern = "owned", setter(into))]
     #[derive(Delegate)]
-    /// 【委托·目标·字段·类型】`Box<T>`自身并没有实现【委托`trait`】，虽然它被解引用后可调
+    /// 【委托·目标（字段）类型】`Box<T>`自身并没有实现【委托`trait`】，虽然它被解引用后可调
     /// 用【委托`trait`】的成员方法。
     #[delegate(Shout, automatic_where_clause = "false")]
     pub struct BoxedPet {

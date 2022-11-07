@@ -1,0 +1,11 @@
+{
+    "rust-analyzer.checkOnSave.overrideCommand": [
+        "cargo",
+        "check",
+        // "--quiet",
+        "--workspace",
+        "--message-format=json",
+        "--all-targets",
+        "--offline"
+    ]
+}

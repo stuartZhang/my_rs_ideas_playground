@@ -1,31 +1,8 @@
-
-/// 模仿在`crate`外定义的【外部】`trait`。
+/// 模仿在`crate`外定义的【外部】`struct / enum`。
 mod remote_structure {
-    use ::std::fmt::Display;
-    pub trait Shout {
-        fn shout(&self, input: &str) -> String;
-    }
-    pub trait ShoutGeneric<'a, 'b, T, R> where 'a: 'b, T: Display, R: Display {
-        fn shout(&self, input1: &'a str, input2: &'b T) -> R;
-    }
-}
-///（1）【`trait`先定义，`strut / enum`再定义】的次序很重要。否则，`ambassador crate`
-///     给`trait`生成的【过程宏】对`struct / enum`定义不可见。
-///（2）复制【外部】`trait`定义至本地代码，并冠以`#[delegatable_trait_remote]`元属性
-#[macro_use]
-mod delegated_structure {
-    use ::ambassador::delegatable_trait_remote;
     use ::derive_builder::Builder;
-    use crate::remote_structure::Shout;
-    /// 使得【外部】定义的`trait`对本地定义的【委托】可用。
-    #[delegatable_trait_remote]
     pub trait Shout {
         fn shout(&self, input: &str) -> String;
-    }
-    /// 使得【外部】定义的`trait`对本地定义的【委托】可用。
-    #[delegatable_trait_remote]
-    pub trait ShoutGeneric<'a, 'b, T, R> where 'a: 'b, T: Display, R: Display {
-        fn shout(&self, input1: &'a str, input2: &'b T) -> R;
     }
     #[derive(Builder, Clone, Debug)]
     pub struct Pet {
@@ -33,58 +10,118 @@ mod delegated_structure {
         name: String
     }
     impl Pet {
-        #[cfg(feature = "ambassador-where")]
         pub fn name(&self) -> &str {
             &self.name
         }
     }
+    /// 【单字段·结构体】委托
+    pub struct SingleElementWrapper(pub Pet);
+    #[derive(Builder, Debug)]
+    pub struct SingleFieldWrapper {
+        pub cat: Pet
+    }
+    /// 【多字段·结构体】委托至指定字段
+    pub struct MultiElementWrapper(pub Pet, pub Pet);
+    #[derive(Builder, Debug)]
+    pub struct MultiFieldWrapper {
+        pub cat: Pet,
+        pub dog: Pet
+    }
+    /// 【自己·委托·自己】对【委托`trait`】提供`trait methods`与`inherent methods`的双份实现。
+    #[derive(Builder, Debug)]
+    pub struct SelfWrapper {
+        aggressive: bool
+    }
+    impl SelfWrapper {
+        pub fn aggressive(&self) -> bool {
+            self.aggressive
+        }
+    }
+    /// 【泛型·结构体】委托至【泛型·类型·字段】
+    #[derive(Builder, Debug)]
+    pub struct GenericFieldWrapper<T> /* #3. 自动添加
+        (1) where T: Shout 或
+        (2) where T: Shout + Display */ {
+        pub cat: T
+    }
+    /// 委托【泛型`trait`】
+    #[derive(Builder, Debug)]
+    pub struct GenericTraitWrapper {
+        pub cat: Pet
+    }
+    /// 委托至【智能·指针】（或称“间接”委托）
+    #[derive(Builder)]
+    #[builder(pattern = "owned", setter(into))]
+    pub struct SmartPointerWrapper {
+        pub pet: Box<dyn Shout>
+    }
+    /// 委托至【成员方法·返回值】
+    #[derive(Builder, Debug)]
+    pub struct TargetMethodWrapper {
+        #[builder(setter(into))]
+        pub pet: Box<Pet>
+    }
+}
+///（1）`trait`先定义，`strut / enum`再定义的次序很重要。否则，`ambassador crate`
+///    给`trait`生成的【过程宏】对`struct / enum`定义不可见。
+///（2）复制【外部】`struct / enum`定义至本地代码，并冠以`#[delegate_remote]`元属性。
+///（3）【外部】`struct / enum`仅需要保证【委托·目标·字段】是`pub`的，即可。而不需要
+///     所有字段都是`pub`。
+#[macro_use]
+mod delegated_structure {
+    use ::ambassador::{delegatable_trait, delegatable_trait_remote};
+    use ::std::fmt::Display;
+    use crate::remote_structure::{Pet, Shout};
+    #[delegatable_trait_remote]
+    pub trait Shout {
+        fn shout(&self, input: &str) -> String;
+    }
+    #[delegatable_trait]
+    pub trait ShoutGeneric<'a, 'b, T, R> where 'a: 'b, T: Display, R: Display {
+        fn shout(&self, input1: &'a str, input2: &'b T) -> R;
+    }
     /// 【委托·目标（字段）类型】得实现【委托`trait`】。
     impl Shout for Pet {
         fn shout(&self, input: &str) -> String {
-            format!("[{}] {} - meow!", self.name, input)
+            format!("[{}] {} - meow!", self.name(), input)
         }
     }
 }
 /// 【单字段·结构体】委托
 mod delegating_structure1 {
-    use ::ambassador::Delegate;
-    use ::derive_builder::Builder;
-    use crate::{delegated_structure::Pet, remote_structure::Shout};
-    /// 标记【本地】`tuple struct`为【委托类】
+    use ::ambassador::delegate_remote;
+    use crate::remote_structure::{Pet, Shout, SingleElementWrapper, SingleFieldWrapper};
+    /// 标记【外部】`tuple struct`为【委托类】
     /// 在给【单·字段】结构体做委托时，不需要明文指定
     /// `#[delegate(...)]`元属性的`target`键-值对。
-    #[derive(Delegate)]
+    #[delegate_remote]
     #[delegate(Shout)]
-    pub struct TupleWrapper(pub Pet);
-    /// 标记【本地】`struct`为【委托类】
+    struct SingleElementWrapper(Pet);
+    /// 标记【外部】`struct`为【委托类】
     /// 在给【单·字段】结构体做委托时，不需要明文指定
     /// `#[delegate(...)]`元属性的`target`键-值对。
-    #[derive(Builder, Debug)]
-    #[derive(Delegate)]
+    #[delegate_remote]
     #[delegate(Shout)]
-    pub struct FieldWrapper {
+    struct SingleFieldWrapper {
         cat: Pet
     }
     // 给【委托·类型】自动生成`trait`实现块
 }
 /// 【多字段·结构体】委托至指定字段
 mod delegating_structure2 {
-    use ::ambassador::Delegate;
-    use ::derive_builder::Builder;
-    use crate::{delegated_structure::Pet, remote_structure::Shout};
-    /// 标记【本地】`tuple struct`为【委托类】
+    use ::ambassador::delegate_remote;
+    use crate::remote_structure::{Pet, MultiElementWrapper, MultiFieldWrapper, Shout};
+    /// 标记【外部】`tuple struct`为【委托类】
     /// 注意：`#[delegate(...)]`元属性的`target`键-值对可以是序号
-    #[derive(Delegate)]
+    #[delegate_remote]
     #[delegate(Shout, target = "1")]
-    pub struct TupleWrapper(pub Pet, pub Pet);
-    /// 标记【本地】`struct`为【委托类】
+    struct MultiElementWrapper(Pet, Pet);
+    /// 标记【外部】`struct`为【委托类】
     /// 注意：`#[delegate(...)]`元属性的`target`键-值对也可以是字段名
-    #[derive(Builder, Debug)]
-    #[derive(Delegate)]
+    #[delegate_remote]
     #[delegate(Shout, target = "cat")]
-    pub struct FieldWrapper {
+    struct MultiFieldWrapper {
         cat: Pet,
-        #[allow(dead_code)]
         dog: Pet
     }
     // 给【委托·类型】自动生成`trait`实现块
@@ -102,20 +139,18 @@ mod delegating_structure2 {
 ///       `<Type as Trait>::method(&self, ...)`语法或`trait Object`，那么`trait methods`
 ///       几乎不会被调用到。
 mod delegating_structure3 {
-    use ::ambassador::Delegate;
-    use ::derive_builder::Builder;
-    use crate::remote_structure::Shout;
-    #[derive(Builder, Debug)]
-    #[derive(Delegate)]
+    use ::ambassador::delegate_remote;
+    use crate::remote_structure::{SelfWrapper, Shout};
+    #[delegate_remote]
     #[delegate(Shout, target = "self")] // 它会给`Cat`结构体再生成一个`impl Shout for Cat {...}`
                                         // 的`trait methods`实现块。
-    pub struct Cat {
+    struct SelfWrapper {
         aggressive: bool
     }
     ///【手写】`Inherent Methods`实现块 - 适用于旧版本`lib`调用端的`func_a(_: Cat)`普通函数
-    impl Cat {
+    impl SelfWrapper {
         pub fn shout(&self, input: &str) -> String {
-            format!("[aggressive = {}] {} - meow!", self.aggressive, input)
+            format!("[aggressive = {}] {} - meow!", self.aggressive(), input)
         }
     }
     //【生成】`trait methods`实现块 - 适用于新版本`lib`调用端的`func_a<T: Shout>(_: T)`泛型函数
@@ -126,18 +161,16 @@ mod delegating_structure3 {
 /// （2）实现由`#[delegate(where)]`属性键-值对额外指定的`trait bounds` — 在本例中是`Display trait`
 /// （3）由`Ambassador crate`派生的过程宏·会给【委托·类型】自动添加`where`从句，来落实上述两条约束。
 mod delegating_structure4 {
-    use ::ambassador::Delegate;
-    use ::derive_builder::Builder;
+    use ::ambassador::delegate_remote;
     #[cfg(feature = "ambassador-where")]
     use ::std::fmt::{Display, Formatter, Result};
     #[cfg(feature = "ambassador-where")]
-    use crate::delegated_structure::Pet;
-    use crate::remote_structure::Shout;
-    #[derive(Builder, Debug)]
-    #[derive(Delegate)]
+    use crate::remote_structure::Pet;
+    use crate::remote_structure::{GenericFieldWrapper, Shout};
+    #[delegate_remote]
     #[cfg_attr(not(feature = "ambassador-where"), delegate(Shout))]
     #[cfg_attr(feature = "ambassador-where", delegate(Shout, where = "T: Display"))]
-    pub struct FieldWrapper<T> /* #3. 自动添加
+    pub struct GenericFieldWrapper<T> /* #3. 自动添加
         (1) where T: Shout 或
         (2) where T: Shout + Display */ {
         cat: T
@@ -158,15 +191,13 @@ mod delegating_structure4 {
 /// (3) 由`Ambassador crate`派生的过程宏·会自动“同步”【委托·目标（字段）类型】`trait`实现块
 ///     上的【`trait`泛型参数】（含【限定条件】）至【委托·类型】的`trait`实现块上。
 mod delegating_structure5 {
-    use ::ambassador::Delegate;
-    use ::derive_builder::Builder;
+    use ::ambassador::delegate_remote;
     use ::std::fmt::Display;
-    use crate::{delegated_structure::Pet, remote_structure::ShoutGeneric};
-    #[derive(Builder, Debug)]
-    #[derive(Delegate)]
+    use crate::{delegated_structure::{ShoutGeneric}, remote_structure::{GenericTraitWrapper, Pet}};
+    #[delegate_remote]
     /// #1. 【`trait`泛型参数】（含【限定条件】）被注册于`#[delegate(generics)]`属性键-值对
     #[delegate(ShoutGeneric<'a, 'b, T, R>, generics="'a: 'b, 'b, T: Display, R: Display")]
-    pub struct Wrapper {
+    struct GenericTraitWrapper {
         cat: Pet
     }
     /// #2. 【`trait`泛型参数】（含【限定条件】）被添加于【委托·目标（字段）类型】的
@@ -189,16 +220,13 @@ mod delegating_structure5 {
 /// 它可以被理解为对`#[delegate_to_methods]`针对`Deref::deref()`与`DerefMut::deref_mut()`
 /// 场景的语法糖。
 mod delegating_structure6 {
-    use ::ambassador::Delegate;
-    use ::derive_builder::Builder;
-    use crate::{delegated_structure::Pet, remote_structure::Shout};
-    #[derive(Builder)]
-    #[builder(pattern = "owned", setter(into))]
-    #[derive(Delegate)]
+    use ::ambassador::delegate_remote;
+    use crate::remote_structure::{Pet, Shout, SmartPointerWrapper};
+    #[delegate_remote]
     /// 【委托·目标（字段）类型】`Box<T>`自身并没有实现【委托`trait`】，虽然它被解引用后可调
     /// 用【委托`trait`】的成员方法。
     #[delegate(Shout, automatic_where_clause = "false")]
-    pub struct BoxedPet {
+    pub struct SmartPointerWrapper {
         pet: Box<dyn Shout>
     }
     impl From<Pet> for Box<dyn Shout> {
@@ -225,7 +253,7 @@ mod delegating_structure7 {
     use ::ambassador::delegate_to_methods;
     use ::derive_builder::Builder;
     use ::std::ops::Deref;
-    use crate::{delegated_structure::Pet, remote_structure::Shout};
+    use crate::remote_structure::{Pet, Shout};
     /// 注意：在类型定义上，没有`#[delegate]`属性。
     #[derive(Builder, Debug)]
     pub struct BoxedPet {
@@ -241,58 +269,58 @@ mod delegating_structure7 {
     }
 }
 use ::std::error::Error;
-use delegated_structure::PetBuilder;
-use remote_structure::{Shout, ShoutGeneric};
+use delegated_structure::ShoutGeneric;
+use remote_structure::{PetBuilder, Shout};
 fn main() -> Result<(), Box<dyn Error>> {
     { // 【单字段·结构体】委托
-        use delegating_structure1::{FieldWrapperBuilder, TupleWrapper};
-        let wrapper = TupleWrapper(PetBuilder::default().name("a").build()?);
+        use remote_structure::{SingleElementWrapper, SingleFieldWrapperBuilder};
+        let wrapper = SingleElementWrapper(PetBuilder::default().name("a").build()?);
         dbg!(wrapper.shout("input"));
-        let wrapper = FieldWrapperBuilder::default().cat(PetBuilder::default().name("a").build()?).build()?;
+        let wrapper = SingleFieldWrapperBuilder::default().cat(PetBuilder::default().name("a").build()?).build()?;
         dbg!(wrapper.shout("input"));
     }
     { // 【多字段·结构体】委托至指定字段
-        use delegating_structure2::{FieldWrapperBuilder, TupleWrapper};
-        let wrapper = TupleWrapper(
+        use remote_structure::{MultiElementWrapper, MultiFieldWrapperBuilder};
+        let wrapper = MultiElementWrapper(
             PetBuilder::default().name("a").build()?,
             PetBuilder::default().name("b").build()?
         );
         dbg!(wrapper.shout("input"));
-        let wrapper = FieldWrapperBuilder::default()
+        let wrapper = MultiFieldWrapperBuilder::default()
             .cat(PetBuilder::default().name("a").build()?)
             .dog(PetBuilder::default().name("b").build()?)
             .build()?;
         dbg!(wrapper.shout("input"));
     }
     { // 【自己·委托·自己】提供对`trait Trait`的`trait methods`与`inherent methods`双份实现。
-        use delegating_structure3::{Cat, CatBuilder};
-        let cat = CatBuilder::default().aggressive(true).build()?;
+        use remote_structure::{SelfWrapper, SelfWrapperBuilder};
+        let cat = SelfWrapperBuilder::default().aggressive(true).build()?;
         dbg!(cat.shout("input"));                    // 调用的`inherent method`实现
-        dbg!(<Cat as Shout>::shout(&cat, "input2")); // 调用的`trait method`实现
+        dbg!(<SelfWrapper as Shout>::shout(&cat, "input2")); // 调用的`trait method`实现
                                                      // 这两者不一样。
     }
     { // 【泛型·结构体】委托至【泛型·类型·字段】
-        use delegating_structure4::FieldWrapperBuilder;
+        use remote_structure::GenericFieldWrapperBuilder;
         let cat = PetBuilder::default().name("a").build()?;
         #[cfg(not(feature = "ambassador-where"))]
         dbg!(&cat);
         #[cfg(feature = "ambassador-where")]
         dbg!(cat.to_string());
-        let wrapper = FieldWrapperBuilder::default().cat(cat).build()?;
+        let wrapper = GenericFieldWrapperBuilder::default().cat(cat).build()?;
         dbg!(wrapper.shout("input"));
     }
     { // 委托【泛型`trait`】
         use ::std::net::{IpAddr, Ipv4Addr};
-        use delegating_structure5::{Wrapper, WrapperBuilder};
+        use remote_structure::{GenericTraitWrapper, GenericTraitWrapperBuilder};
         let cat = PetBuilder::default().name("a").build()?;
-        let wrapper = WrapperBuilder::default().cat(cat).build()?;
+        let wrapper = GenericTraitWrapperBuilder::default().cat(cat).build()?;
         let addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
-        dbg!(<Wrapper as ShoutGeneric<'_, '_, IpAddr, _>>::shout(&wrapper, "input1", &addr));
+        dbg!(<GenericTraitWrapper as ShoutGeneric<'_, '_, IpAddr, _>>::shout(&wrapper, "input1", &addr));
     }
     { // 委托至【智能·指针】（或称“间接”委托）
-        use delegating_structure6::BoxedPetBuilder;
+        use remote_structure::SmartPointerWrapperBuilder;
         let cat = PetBuilder::default().name("a").build()?;
-        let boxed_pet = BoxedPetBuilder::default().pet(cat).build()?;
+        let boxed_pet = SmartPointerWrapperBuilder::default().pet(cat).build()?;
         dbg!(boxed_pet.shout("input"));
     }
     { // 委托至【成员方法·返回值】
