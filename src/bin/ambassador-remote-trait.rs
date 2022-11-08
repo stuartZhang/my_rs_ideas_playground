@@ -17,12 +17,12 @@ mod delegated_structure {
     use ::ambassador::delegatable_trait_remote;
     use ::derive_builder::Builder;
     use crate::remote_structure::Shout;
-    /// 使得【外部】定义的`trait`对本地定义的【委托】可用。
+    /// 使得【外部】定义的`trait`【本地】可【委托】。
     #[delegatable_trait_remote]
     pub trait Shout {
         fn shout(&self, input: &str) -> String;
     }
-    /// 使得【外部】定义的`trait`对本地定义的【委托】可用。
+    /// 使得【外部】定义的`trait`【本地】可【委托】。
     #[delegatable_trait_remote]
     pub trait ShoutGeneric<'a, 'b, T, R> where 'a: 'b, T: Display, R: Display {
         fn shout(&self, input1: &'a str, input2: &'b T) -> R;
@@ -120,11 +120,11 @@ mod delegating_structure3 {
     }
     //【生成】`trait methods`实现块 - 适用于新版本`lib`调用端的`func_a<T: Shout>(_: T)`泛型函数
 }
-/// 【泛型·结构体】委托至【泛型·类型·字段】。其中，委托·目标【泛型·字段】需要满足两个条件：
+/// 【泛型·结构体】委托至【泛型·类型·字段】`where`。其中，委托·目标【泛型·字段】需要满足两个条件：
 /// （1）实现【委托`trait`】 — 在本例中是`Shout trait`
 ///      - 另一个属性`#[delegate(automatic_where_clause = "false")]`可被用来关闭该限制。
-/// （2）实现由`#[delegate(where)]`属性键-值对额外指定的`trait bounds` — 在本例中是`Display trait`
-/// （3）由`Ambassador crate`派生的过程宏·会给【委托·类型】自动添加`where`从句，来落实上述两条约束。
+/// （2）实现由`#[delegate(where)]`属性键-值对·额外指定的`trait bounds` — 在本例中是`Display trait`
+/// 最后，由`Ambassador crate`派生的过程宏·会给【委托·类型】自动添加`where`从句，来落实上述两条约束。
 mod delegating_structure4 {
     use ::ambassador::Delegate;
     use ::derive_builder::Builder;
@@ -152,7 +152,7 @@ mod delegating_structure4 {
     }
     // 给【委托·类型】自动生成`trait`实现块
 }
-/// 委托【泛型`trait`】。其中，【`trait`泛型参数】（含【限定条件】）
+/// 委托【泛型`trait`】`generics`。其中，【`trait`泛型参数】（含【限定条件】）
 /// (1) 既要·被注册于`#[delegate(generics)]`属性键-值对
 /// (2) 还要·被添加于【委托·目标（字段）类型】的`trait`实现块上。譬如，`impl<T> ShoutGeneric<T> for Pet where T: *** {`。
 /// (3) 由`Ambassador crate`派生的过程宏·会自动“同步”【委托·目标（字段）类型】`trait`实现块
@@ -216,9 +216,9 @@ mod delegating_structure6 {
 /// `#[delegate(...)]`提供了三个属性键-值对`target_ref`, `target_mut`, `target_owned`
 /// （1）分别对应于【委托`trait`】内三类“接受者·类型”（`&self`, `&mut self`, `self`）的成员方法
 /// （2）分别对应于三款样式的成员方法签名
-///     - target_ref   => fn get_delegate_target(&self)         -> &X
-///     - target_mut   => fn get_delegate_target_mut(&mut self) -> &mut X
-///     - target_owned => fn get_delegate_target_owned(self)    -> X
+///     - target_ref   | &self     | fn get_delegate_target(&self)         -> &X
+///     - target_mut   | &mut self | fn get_delegate_target_mut(&mut self) -> &mut X
+///     - target_owned | self      | fn get_delegate_target_owned(self)    -> X
 /// （3）对它们，按需设置就好，不必每次都全部配置。
 /// `#[delegate]`与`#[delegate_to_methods]`被修饰于`impl`块，而不是类型定义。
 mod delegating_structure7 {
@@ -238,6 +238,8 @@ mod delegating_structure7 {
         fn get_delegate_target(&self) -> &Pet {
             self.pet.deref()
         }
+        #[allow(dead_code)]
+        pub fn never_used(&self) {}
     }
 }
 use ::std::error::Error;
