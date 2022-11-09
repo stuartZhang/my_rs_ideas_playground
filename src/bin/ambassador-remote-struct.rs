@@ -1,6 +1,7 @@
 /// 模仿在`crate`外定义的【外部】`struct / enum`。
 mod remote_structure {
     use ::derive_builder::Builder;
+    use ::std::ops::{Deref, DerefMut};
     pub trait Shout {
         fn shout(&self, input: &str) -> String;
     }
@@ -60,6 +61,17 @@ mod remote_structure {
     pub struct TargetMethodWrapper {
         #[builder(setter(into))]
         pub pet: Box<Pet>
+    }
+    impl Deref for TargetMethodWrapper {
+        type Target = Pet;
+        fn deref(&self) -> &Self::Target {
+            self.pet.deref()
+        }
+    }
+    impl DerefMut for TargetMethodWrapper {
+        fn deref_mut(&mut self) -> &mut Self::Target {
+            self.pet.deref_mut()
+        }
     }
 }
 ///（1）`trait`先定义，`strut / enum`再定义的次序很重要。否则，`ambassador crate`
@@ -254,17 +266,24 @@ mod delegating_structure7 {
     use ::ambassador::delegate_to_remote_methods;
     use ::std::ops::Deref;
     use crate::remote_structure::{Pet, Shout, TargetMethodWrapper};
-    //（1）先单独定义`target method`。
+    ///（1）先单独定义`target method`。
+    /// 因为【委托·类型】是外部的，所以不能直接使用`#[delegate_to_methods]`元属性
+    /// 来直接修饰`impl`块。
     impl TargetMethodWrapper {
         fn get_delegate_target(&self) -> &Pet {
             self.pet.deref()
         }
     }
     //（2）再委托`trait`实现·给该成员方法的返回值。
-    #[delegate_to_remote_methods]
-    #[delegate(Shout, target_ref = "get_delegate_target")]
+    #[delegate_to_remote_methods] // 下面的`impl`块是虚的。`Ambassador crate`过程宏并不会
+                                  // 给`get_delegate_target()`方法签名生成一个实际的`impl`块。
+    #[delegate(Shout, target_ref = "get_delegate_target", target_mut = "deref_mut")]
     impl TargetMethodWrapper {
+        // 此是【本地】定义的`Inherent method`
         fn get_delegate_target(&self) -> &Pet;
+        // 此是【外部】定义的`trait method`
+        fn deref_mut(&mut self) -> &mut Pet;
+        // 绝不能包含非`target method`成员方法
     }
 }
 use ::std::error::Error;

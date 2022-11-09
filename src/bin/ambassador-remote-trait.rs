@@ -238,6 +238,7 @@ mod delegating_structure7 {
         fn get_delegate_target(&self) -> &Pet {
             self.pet.deref()
         }
+        /// 可以包含额外的非`target method`的成员方法
         #[allow(dead_code)]
         pub fn never_used(&self) {}
     }
