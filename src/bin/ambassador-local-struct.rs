@@ -9,6 +9,7 @@ mod delegated_structure {
     #[delegatable_trait]
     pub trait Shout {
         fn shout(&self, input: &str) -> String;
+        fn alias(&mut self, name: &str);
     }
     /// 它的作用可渗透至下游`crate`
     #[delegatable_trait]
@@ -30,6 +31,9 @@ mod delegated_structure {
     impl Shout for Pet {
         fn shout(&self, input: &str) -> String {
             format!("[{}] {} - meow!", self.name, input)
+        }
+        fn alias(&mut self, name: &str) {
+            self.name = name.into();
         }
     }
 }
@@ -81,8 +85,11 @@ mod delegating_structure2 {
 /// 【使用场景】需要满足如下几个条件：
 ///     1. `lib target`工程
 ///     2. 版本升级时，新版本·重构了·导出结构体`pub struct`的成员方法布局。
-///     3. 重构目标：使用不同的`trait`对【导出·结构体】的【成员方法】做分类
-///         3.1 被用作分类的`trait`既不能包含“关联·类型”也能不包含“关联·常量”。
+///     3. 重构目标：使用不同的`trait`对【导出·结构体】的【成员方法】做分组
+///         3.1 被用作分组的`trait`既不能包含“关联·类型”也能不包含“关联·常量”。
+///         3.2 若被用作分组`trait`的成员方法并没有被【委托·目标·类型`self`】逐一被实现（毕
+///             竟，并没有从语法上`impl trait`），那么`[unconditional_recursion]`编译错误
+///             就会出现。
 ///     4. 要求新版本的【导出·结构体】
 ///         4.1 既适用于【旧版】的具体类型·普通函数·调用方式`func_a(_: Cat)`
 ///         4.2 也适用于【新版】的`trait bound`·泛型函数·调用方式`func_a<T: Shout>(_: T)`
@@ -98,12 +105,17 @@ mod delegating_structure3 {
     #[delegate(Shout, target = "self")] // 它会给`Cat`结构体再生成一个`impl Shout for Cat {...}`
                                         // 的`trait methods`实现块。
     pub struct Cat {
-        aggressive: bool
+        aggressive: bool,
+        #[builder(default)]
+        name: Option<String>
     }
     ///【手写】`Inherent Methods`实现块 - 适用于旧版本`lib`调用端的`func_a(_: Cat)`普通函数
     impl Cat {
         pub fn shout(&self, input: &str) -> String {
             format!("[aggressive = {}] {} - meow!", self.aggressive, input)
+        }
+        fn alias(&mut self, name: &str) {
+            self.name = Some(name.into());
         }
     }
     //【生成】`trait methods`实现块 - 适用于新版本`lib`调用端的`func_a<T: Shout>(_: T)`泛型函数
@@ -212,19 +224,22 @@ mod delegating_structure6 {
 mod delegating_structure7 {
     use ::ambassador::delegate_to_methods;
     use ::derive_builder::Builder;
-    use ::std::ops::Deref;
+    use ::std::ops::{Deref, DerefMut};
     use crate::delegated_structure::{Pet, Shout};
     /// 注意：在类型定义上，没有`#[delegate]`属性。
     #[derive(Builder, Debug)]
-    pub struct BoxedPet {
+    pub struct TargetMethodWrapper {
         #[builder(setter(into))]
         pet: Box<Pet>
     }
     #[delegate_to_methods]
-    #[delegate(Shout, target_ref = "get_delegate_target")]
-    impl BoxedPet {
+    #[delegate(Shout, target_ref = "get_delegate_target", target_mut = "get_delegate_target_mut")]
+    impl TargetMethodWrapper {
         fn get_delegate_target(&self) -> &Pet {
             self.pet.deref()
+        }
+        fn get_delegate_target_mut(&mut self) -> &mut Pet {
+            self.pet.deref_mut()
         }
     }
 }
@@ -283,10 +298,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         dbg!(boxed_pet.shout("input"));
     }
     { // 委托至【成员方法·返回值】
-        use delegating_structure7::BoxedPetBuilder;
+        use delegating_structure7::TargetMethodWrapperBuilder;
         let cat = PetBuilder::default().name("a").build()?;
-        let boxed_pet = BoxedPetBuilder::default().pet(cat).build()?;
+        let mut boxed_pet = TargetMethodWrapperBuilder::default().pet(cat).build()?;
         dbg!(boxed_pet.shout("input"));
+        boxed_pet.alias("b");
+        dbg!(boxed_pet.shout("input2"));
     }
     Ok(())
 }

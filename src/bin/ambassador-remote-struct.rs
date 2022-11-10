@@ -4,6 +4,7 @@ mod remote_structure {
     use ::std::ops::{Deref, DerefMut};
     pub trait Shout {
         fn shout(&self, input: &str) -> String;
+        fn alias(&mut self, name: &str);
     }
     #[derive(Builder, Clone, Debug)]
     pub struct Pet {
@@ -13,6 +14,9 @@ mod remote_structure {
     impl Pet {
         pub fn name(&self) -> &str {
             &self.name
+        }
+        pub fn change_name(&mut self, name: String) {
+            self.name = name;
         }
     }
     /// 【单字段·结构体】委托
@@ -31,11 +35,16 @@ mod remote_structure {
     /// 【自己·委托·自己】对【委托`trait`】提供`trait methods`与`inherent methods`的双份实现。
     #[derive(Builder, Debug)]
     pub struct SelfWrapper {
-        aggressive: bool
+        aggressive: bool,
+        #[builder(default)]
+        name: Option<String>
     }
     impl SelfWrapper {
         pub fn aggressive(&self) -> bool {
             self.aggressive
+        }
+        pub fn change_name(&mut self, name: String) {
+            self.name = Some(name);
         }
     }
     /// 【泛型·结构体】委托至【泛型·类型·字段】
@@ -87,6 +96,7 @@ mod delegated_structure {
     #[delegatable_trait_remote]
     pub trait Shout {
         fn shout(&self, input: &str) -> String;
+        fn alias(&mut self, name: &str);
     }
     /// 它的作用可渗透至下游`crate`
     #[delegatable_trait]
@@ -97,6 +107,9 @@ mod delegated_structure {
     impl Shout for Pet {
         fn shout(&self, input: &str) -> String {
             format!("[{}] {} - meow!", self.name(), input)
+        }
+        fn alias(&mut self, name: &str) {
+            self.change_name(name.into());
         }
     }
 }
@@ -143,8 +156,11 @@ mod delegating_structure2 {
 /// 【使用场景】需要满足如下几个条件：
 ///     1. `lib target`工程
 ///     2. 版本升级时，新版本·重构了·导出结构体`pub struct`的成员方法布局。
-///     3. 重构目标：使用不同的`trait`对【导出·结构体】的【成员方法】做分类
-///         3.1 被用作分类的`trait`既不能包含“关联·类型”也能不包含“关联·常量”。
+///     3. 重构目标：使用不同的`trait`对【导出·结构体】的【成员方法】做分组
+///         3.1 被用作分组的`trait`既不能包含“关联·类型”也能不包含“关联·常量”。
+///         3.2 若被用作分组`trait`的成员方法并没有被【委托·目标·类型`self`】逐一被实现（毕
+///             竟，并没有从语法上`impl trait`），那么`[unconditional_recursion]`编译错误
+///             就会出现。
 ///     4. 要求新版本的【导出·结构体】
 ///         4.1 既适用于【旧版】的具体类型·普通函数·调用方式`func_a(_: Cat)`
 ///         4.2 也适用于【新版】的`trait bound`·泛型函数·调用方式`func_a<T: Shout>(_: T)`
@@ -157,13 +173,14 @@ mod delegating_structure3 {
     #[delegate_remote]
     #[delegate(Shout, target = "self")] // 它会给`Cat`结构体再生成一个`impl Shout for Cat {...}`
                                         // 的`trait methods`实现块。
-    struct SelfWrapper {
-        aggressive: bool
-    }
+    struct SelfWrapper {}
     ///【手写】`Inherent Methods`实现块 - 适用于旧版本`lib`调用端的`func_a(_: Cat)`普通函数
     impl SelfWrapper {
         pub fn shout(&self, input: &str) -> String {
             format!("[aggressive = {}] {} - meow!", self.aggressive(), input)
+        }
+        fn alias(&mut self, name: &str) {
+            self.change_name(name.into());
         }
     }
     //【生成】`trait methods`实现块 - 适用于新版本`lib`调用端的`func_a<T: Shout>(_: T)`泛型函数
@@ -264,7 +281,7 @@ mod delegating_structure6 {
 /// `#[delegate]`与`#[delegate_to_remote_methods]`被修饰于`impl`块，而不是类型定义。
 mod delegating_structure7 {
     use ::ambassador::delegate_to_remote_methods;
-    use ::std::ops::Deref;
+    use ::std::ops::{Deref, DerefMut};
     use crate::remote_structure::{Pet, Shout, TargetMethodWrapper};
     ///（1）先单独定义`target method`。
     /// 因为【委托·类型】是外部的，所以不能直接使用`#[delegate_to_methods]`元属性
@@ -276,9 +293,10 @@ mod delegating_structure7 {
     }
     //（2）再委托`trait`实现·给该成员方法的返回值。
     #[delegate_to_remote_methods] // 下面的`impl`块是虚的。`Ambassador crate`过程宏并不会
-                                  // 给`get_delegate_target()`方法签名生成一个实际的`impl`块。
+                                  // 给`get_delegate_target()`与`deref_mut()`方法签名生
+                                  // 成实际的`impl`块。
     #[delegate(Shout, target_ref = "get_delegate_target", target_mut = "deref_mut")]
-    impl TargetMethodWrapper {
+    impl TargetMethodWrapper { // 混合不同源的`Inherent method`与`trait method`
         // 此是【本地】定义的`Inherent method`
         fn get_delegate_target(&self) -> &Pet;
         // 此是【外部】定义的`trait method`
@@ -344,8 +362,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     { // 委托至【成员方法·返回值】
         use remote_structure::TargetMethodWrapperBuilder;
         let cat = PetBuilder::default().name("a").build()?;
-        let boxed_pet = TargetMethodWrapperBuilder::default().pet(cat).build()?;
+        let mut boxed_pet = TargetMethodWrapperBuilder::default().pet(cat).build()?;
         dbg!(boxed_pet.shout("input"));
+        boxed_pet.alias("b");
+        dbg!(boxed_pet.shout("input2"));
     }
     Ok(())
 }
