@@ -395,9 +395,9 @@ mod to_method_return_value {
     }
 }
 /// 借助【覆盖·实现`Blanket Implementation`】，将满足`trait bounds`的一类【类型】都作为【委托·类型】。
-/// 它的目标用户就是：其内部类型已经实现了指定`trait`的【智能指针】。
-/// 另外，因为符合`trait bounds`的类型定义一般并不在当前`crate`内（即，【外部】委托类型），所以
-/// `#[delegate_to_remote_methods]`元属性被用来注册委托。
+/// 它的目标用户就是：其内部（委托·目标）类型已经实现了指定【委托`trait`】的【智能指针】（委托·类型）。
+/// 另外，因为符合`trait bounds`的类型定义一般并不位于当前`crate`内（即，【外部】委托类型），所以
+/// `#[delegate_to_remote_methods]`元属性被用来注册委托的`target methods`。
 mod blanket_impl_demo {
     #[allow(drop_bounds)]
     mod delegating_structure {
