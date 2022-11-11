@@ -304,6 +304,29 @@ mod delegating_structure7 {
         // 绝不能包含非`target method`成员方法
     }
 }
+/// 借助【覆盖·实现`Blanket Implementation`】，将满足`trait bounds`的一类【类型】都作为【委托·类型】。
+/// 它的目标用户就是：其内部类型已经实现了指定`trait`的【智能指针】。
+/// 另外，因为符合`trait bounds`的类型定义一般并不在当前`crate`内（即，【外部】委托类型），所以
+/// `#[delegate_to_remote_methods]`元属性被用来注册委托。
+#[allow(drop_bounds)]
+mod delegating_structure8 {
+    use ::ambassador::delegate_to_remote_methods;
+    use ::std::ops::DerefMut;
+    use crate::remote_structure::Shout;
+    #[delegate_to_remote_methods] // 允许【外部】委托·类型
+    #[delegate(Shout, target_ref = "deref", target_mut = "deref_mut")] // 委托至【成员方法·返回值】
+    // 满足如下三个条件的任何类型
+    // 1. 同时实现了`DerefMut`与`Drop`两个`trait`。即，该类型至少是一个【智能指针】类型
+    // 2. 其内部类型实现了`Shout trait`
+    // 3. 允许其内部类型是`trait Object`，因为`?Sized`限定条件选择退出了“固定大小类型·约束”`T: Sized`。
+    // 自动成为`Shout trait`的委托类型
+    impl<S, T> T where
+        T: DerefMut<Target = S> + Drop,
+        S: ?Sized + Shout {
+        fn deref(&self) -> &S;
+        fn deref_mut(&mut self) -> &mut S;
+    }
+}
 use ::std::error::Error;
 use delegated_structure::ShoutGeneric;
 use remote_structure::{PetBuilder, Shout};
@@ -363,9 +386,20 @@ fn main() -> Result<(), Box<dyn Error>> {
         use remote_structure::TargetMethodWrapperBuilder;
         let cat = PetBuilder::default().name("a").build()?;
         let mut boxed_pet = TargetMethodWrapperBuilder::default().pet(cat).build()?;
-        dbg!(boxed_pet.shout("input"));
+        fn print(i: &impl Shout, s: &str) {
+            dbg!(i.shout(s));
+        }
+        print(&boxed_pet, "input1");
         boxed_pet.alias("b");
-        dbg!(boxed_pet.shout("input2"));
+        print(&boxed_pet, "input2");
+    }
+    { // 借助【覆盖·实现`Blanket Implementation`】，将满足`trait bounds`的一类【类型】都作为【委托·类型】。
+        let pet = PetBuilder::default().name("a").build()?;
+        let wrapper = Box::new(pet);
+        fn print(i: impl Shout, s: &str) {
+            dbg!(i.shout(s));
+        }
+        print(wrapper, "input3");
     }
     Ok(())
 }
