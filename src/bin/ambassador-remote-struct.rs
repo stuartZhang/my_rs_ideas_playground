@@ -385,13 +385,13 @@ mod to_method_return_value {
     pub fn main() -> Result<(), Box<dyn Error>> {
         let cat = PetBuilder::default().name("a").build()?;
         let mut boxed_pet = TargetMethodWrapperBuilder::default().pet(cat).build()?;
-        fn print(i: &impl Shout, s: &str) {
-            dbg!(i.shout(s));
-        }
         print(&boxed_pet, "input1");
         boxed_pet.alias("b");
         print(&boxed_pet, "input2");
         Ok(())
+    }
+    fn print(i: &impl Shout, s: &str) {
+        dbg!(i.shout(s));
     }
 }
 /// 借助【覆盖·实现`Blanket Implementation`】，将满足`trait bounds`的一类【类型】都作为【委托·类型】。
@@ -411,9 +411,8 @@ mod blanket_impl_demo {
         // 2. 其内部类型实现了`Shout trait`
         // 3. 允许其内部类型是`trait Object`，因为`?Sized`限定条件选择退出了“固定大小类型·约束”`T: Sized`。
         // 自动成为`Shout trait`的委托类型
-        impl<S, T> T where
-            T: DerefMut<Target = S> + Drop,
-            S: ?Sized + Shout {
+        impl<S, T> T where T: DerefMut<Target = S> + Drop,
+                           S: ?Sized + Shout {
             fn deref(&self) -> &S;
             fn deref_mut(&mut self) -> &mut S;
         }
@@ -423,11 +422,11 @@ mod blanket_impl_demo {
     pub fn main() -> Result<(), Box<dyn Error>> {
         let pet = PetBuilder::default().name("a").build()?;
         let wrapper = Box::new(pet);
-        fn print(i: impl Shout, s: &str) {
-            dbg!(i.shout(s));
-        }
         print(wrapper, "input3");
         Ok(())
+    }
+    fn print(i: impl Shout, s: &str) {
+        dbg!(i.shout(s));
     }
 }
 use ::std::error::Error;
