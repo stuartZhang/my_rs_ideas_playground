@@ -422,6 +422,7 @@ mod blanket_impl_demo {
     pub fn main() -> Result<(), Box<dyn Error>> {
         let pet = PetBuilder::default().name("a").build()?;
         let wrapper = Box::new(pet);
+        // 这里没有【自动解引用】。`Box<Pet>`自身是真的实现了`Shout trait`，借助于【委托】。
         print(wrapper, "input3");
         Ok(())
     }
