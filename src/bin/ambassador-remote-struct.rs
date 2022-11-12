@@ -1,3 +1,6 @@
+#[path = "../utils.rs"]
+#[macro_use]
+mod utils;
 /// 模仿在`crate`外定义的【外部】`struct / enum`。
 mod remote_structure {
     use ::derive_builder::Builder;
@@ -134,15 +137,13 @@ mod single_field_demo {
         }
         // 给【委托·类型】自动生成`trait`实现块
     }
-    use ::std::error::Error;
     use crate::remote_structure::{PetBuilder, Shout, SingleElementWrapper, SingleFieldWrapperBuilder};
-    pub fn main() -> Result<(), Box<dyn Error>> {
+    main!{pub, {
         let wrapper = SingleElementWrapper(PetBuilder::default().name("a").build()?);
         dbg!(wrapper.shout("input"));
         let wrapper = SingleFieldWrapperBuilder::default().cat(PetBuilder::default().name("a").build()?).build()?;
         dbg!(wrapper.shout("input"));
-        Ok(())
-    }
+    }}
 }
 /// 【多字段·结构体】委托至指定字段
 mod multiple_field_demo {
@@ -164,9 +165,8 @@ mod multiple_field_demo {
         }
         // 给【委托·类型】自动生成`trait`实现块
     }
-    use ::std::error::Error;
     use crate::remote_structure::{MultiElementWrapper, MultiFieldWrapperBuilder, PetBuilder, Shout};
-    pub fn main() -> Result<(), Box<dyn Error>> {
+    main!{pub, {
         let wrapper = MultiElementWrapper(
             PetBuilder::default().name("a").build()?,
             PetBuilder::default().name("b").build()?
@@ -177,8 +177,7 @@ mod multiple_field_demo {
             .dog(PetBuilder::default().name("b").build()?)
             .build()?;
         dbg!(wrapper.shout("input"));
-        Ok(())
-    }
+    }}
 }
 /// 【自己·委托·自己】对【委托`trait`】提供`trait methods`与`inherent methods`的双份实现。
 /// 【使用场景】需要满足如下几个条件：
@@ -214,15 +213,13 @@ mod to_self_demo {
         }
         //【生成】`trait methods`实现块 - 适用于新版本`lib`调用端的`func_a<T: Shout>(_: T)`泛型函数
     }
-    use ::std::error::Error;
     use crate::remote_structure::{SelfWrapper, SelfWrapperBuilder, Shout};
-    pub fn main() -> Result<(), Box<dyn Error>> {
+    main!{pub, {
         let cat = SelfWrapperBuilder::default().aggressive(true).build()?;
         dbg!(cat.shout("input"));                    // 调用的`inherent method`实现
         dbg!(<SelfWrapper as Shout>::shout(&cat, "input2")); // 调用的`trait method`实现
                                                              // 这两者不一样。
-        Ok(())
-    }
+    }}
 }
 /// 【泛型·结构体】委托至【泛型·类型·字段】`where`。其中，委托·目标【泛型·字段】需要满足两个条件：
 /// （1）实现【委托`trait`】 — 在本例中是`Shout trait`
@@ -255,9 +252,8 @@ mod generic_type_demo {
         }
         // 给【委托·类型】自动生成`trait`实现块
     }
-    use ::std::error::Error;
     use crate::remote_structure::{GenericFieldWrapperBuilder, PetBuilder, Shout};
-    pub fn main() -> Result<(), Box<dyn Error>> {
+    main!{pub, {
         let cat = PetBuilder::default().name("a").build()?;
         #[cfg(not(feature = "ambassador-where"))]
         dbg!(&cat);
@@ -265,8 +261,7 @@ mod generic_type_demo {
         dbg!(cat.to_string());
         let wrapper = GenericFieldWrapperBuilder::default().cat(cat).build()?;
         dbg!(wrapper.shout("input"));
-        Ok(())
-    }
+    }}
 }
 /// 委托【泛型`trait`】`generics`。其中，【`trait`泛型参数】（含【限定条件】）
 /// (1) 既要·被注册于`#[delegate(generics)]`属性键-值对
@@ -293,16 +288,15 @@ mod generic_trait_demo {
         }
         // #3. 给【委托·类型】生成【`trait`实现块】和添加【`trait`泛型参数】（含【限定条件】）
     }
-    use ::std::{error::Error, net::{IpAddr, Ipv4Addr}};
+    use ::std::net::{IpAddr, Ipv4Addr};
     use crate::remote_structure::{GenericTraitWrapper, GenericTraitWrapperBuilder, PetBuilder};
     use crate::delegated_structure::ShoutGeneric;
-    pub fn main() -> Result<(), Box<dyn Error>> {
+    main!{pub, {
         let cat = PetBuilder::default().name("a").build()?;
         let wrapper = GenericTraitWrapperBuilder::default().cat(cat).build()?;
         let addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
         dbg!(<GenericTraitWrapper as ShoutGeneric<'_, '_, IpAddr, _>>::shout(&wrapper, "input1", &addr));
-        Ok(())
-    }
+    }}
 }
 /// 委托至【智能·指针】（或称“间接”委托）。即，
 /// （1）【智能·指针】类型自身并未直接实现【委托`trait`】。
@@ -332,14 +326,12 @@ mod to_smart_pointer_demo {
         }
         // 给【委托·类型】自动生成`trait`实现块
     }
-    use ::std::error::Error;
     use crate::remote_structure::{PetBuilder, Shout, SmartPointerWrapperBuilder};
-    pub fn main() -> Result<(), Box<dyn Error>> {
+    main!{pub, {
         let cat = PetBuilder::default().name("a").build()?;
         let boxed_pet = SmartPointerWrapperBuilder::default().pet(cat).build()?;
         dbg!(boxed_pet.shout("input"));
-        Ok(())
-    }
+    }}
 }
 /// 委托至【成员方法·返回值】。其中，
 /// （1）【成员方法】也被称为“委托·目标·成员方法”`target method`。
@@ -380,16 +372,14 @@ mod to_method_return_value {
             // 绝不能包含非`target method`成员方法
         }
     }
-    use ::std::error::Error;
     use crate::remote_structure::{PetBuilder, Shout, TargetMethodWrapperBuilder};
-    pub fn main() -> Result<(), Box<dyn Error>> {
+    main!{pub, {
         let cat = PetBuilder::default().name("a").build()?;
         let mut boxed_pet = TargetMethodWrapperBuilder::default().pet(cat).build()?;
         print(&boxed_pet, "input1");
         boxed_pet.alias("b");
         print(&boxed_pet, "input2");
-        Ok(())
-    }
+    }}
     fn print(i: &impl Shout, s: &str) {
         dbg!(i.shout(s));
     }
@@ -417,21 +407,18 @@ mod blanket_impl_demo {
             fn deref_mut(&mut self) -> &mut S;
         }
     }
-    use ::std::error::Error;
     use crate::remote_structure::{PetBuilder, Shout};
-    pub fn main() -> Result<(), Box<dyn Error>> {
+    main!{pub, {
         let pet = PetBuilder::default().name("a").build()?;
         let wrapper = Box::new(pet);
         // 这里没有【自动解引用】。`Box<Pet>`自身是真的实现了`Shout trait`，借助于【委托】。
         print(wrapper, "input3");
-        Ok(())
-    }
+    }}
     fn print(i: impl Shout, s: &str) {
         dbg!(i.shout(s));
     }
 }
-use ::std::error::Error;
-fn main() -> Result<(), Box<dyn Error>> {
+main!{{
     single_field_demo::main()?;
     multiple_field_demo::main()?;
     to_self_demo::main()?;
@@ -440,5 +427,4 @@ fn main() -> Result<(), Box<dyn Error>> {
     to_smart_pointer_demo::main()?;
     to_method_return_value::main()?;
     blanket_impl_demo::main()?;
-    Ok(())
-}
+}}
