@@ -111,20 +111,28 @@ mod multiple_field_demo {
     }}
 }
 /// 【自己·委托·自己】对【委托`trait`】提供`trait methods`与`inherent methods`的双份实现。
+/// 特点：
+/// （1）委托（目标）类型·即是·委托类型
+/// （2）委托类型·不必·已实现【委托`trait`】（自身），但一定要已包含【委托`trait`】内所有成
+///      员方法`trait methods`的实现块。否则，`unconditional_recursion`编译错误就会被抱怨。
+/// （3）委托后的【委托类型】对【委托`trait`】定义了双份实现。包括：
+///      - 原有的`inherent methods`实现
+///      - 代理的`trait methods`实现
+/// （4）因为`inherent methods`的`method resolution`优先级更高，所以若没有使用完全限定语法
+///       `<Type as Trait>::method(&self, ...)`语法或`trait Object`，那么`trait methods`
+///       几乎不会被调用到。
+/// （5）在委托之后，【委托类型】也就实现了【委托`trait`】。
 /// 【使用场景】需要满足如下几个条件：
 ///     1. `lib target`工程
 ///     2. 版本升级时，新版本·重构了·导出结构体`pub struct`的成员方法布局。
 ///     3. 重构目标：使用不同的`trait`对【导出·结构体】的【成员方法】做分组
 ///         3.1 被用作分组的`trait`既不能包含“关联·类型”也能不包含“关联·常量”。
 ///         3.2 若被用作分组`trait`的成员方法并没有被【委托·目标·类型`self`】逐一被实现（毕
-///             竟，并没有从语法上`impl trait`），那么`[unconditional_recursion]`编译错误
+///             竟，并没有从语法上`impl trait`），那么`unconditional_recursion`编译错误
 ///             就会出现。
 ///     4. 要求新版本的【导出·结构体】
 ///         4.1 既适用于【旧版】的具体类型·普通函数·调用方式`func_a(_: Cat)`
 ///         4.2 也适用于【新版】的`trait bound`·泛型函数·调用方式`func_a<T: Shout>(_: T)`
-/// 特点：因为`inherent methods`的`method resolution`优先级更高，所以若没有使用完全限定语法
-///       `<Type as Trait>::method(&self, ...)`语法或`trait Object`，那么`trait methods`
-///       几乎不会被调用到。
 mod to_self_demo {
     mod delegating_structure {
         use ::ambassador::Delegate;
@@ -161,7 +169,8 @@ mod to_self_demo {
 }
 /// 【泛型·结构体】委托至【泛型·类型·字段】`where`。其中，委托·目标【泛型·字段】需要满足两个条件：
 /// （1）实现【委托`trait`】 — 在本例中是`Shout trait`
-///      - 另一个属性`#[delegate(automatic_where_clause = "false")]`可被用来关闭该限制。
+///      - 另一个属性`#[delegate(automatic_where_clause = "false")]`可被用来关闭该限制。但，
+///        它的·解引用·类型依旧得实现【委托`trait`】。
 /// （2）实现由`#[delegate(where)]`属性键-值对额外指定的`trait bounds` — 在本例中是`Display trait`
 /// 最后，由`Ambassador crate`派生的过程宏·会给【委托·类型】自动添加`where`从句，来落实上述两条约束。
 mod generic_type_demo {
@@ -204,11 +213,19 @@ mod generic_type_demo {
         dbg!(wrapper.shout("input"));
     }}
 }
-/// 委托【泛型`trait`】`generics`。其中，【`trait`泛型参数】（含【限定条件】）
-/// (1) 既要·被注册于`#[delegate(generics)]`属性键-值对
-/// (2) 还要·被添加于【委托·目标（字段）类型】的`trait`实现块上。譬如，`impl<T> ShoutGeneric<T> for Pet where T: *** {`。
+/// 委托【泛型`trait`】`generics`。其中，【泛型`trait`】的【泛型参数】（含【限定条件】）
+/// (1) 既要·被注册于`#[delegate(generics)]`属性键-值对内
+/// (2) 还要·被添加于【委托·目标（字段）类型】的`trait`实现块的`where`从句内。譬如，
+///     `impl<T> ShoutGeneric<T> for Pet where T: *** {`。
 /// (3) 由`Ambassador crate`派生的过程宏·会自动“同步”【委托·目标（字段）类型】`trait`实现块
 ///     上的【`trait`泛型参数】（含【限定条件】）至【委托·类型】的`trait`实现块上。
+/// 当`#[delegate(generics)]`与`#[delegate(where)]`并用时，
+/// (1) `generics`注册来自于【泛型`trait`】的基本限定条件。宏展开后，出现于`trait A<T: Trait1>`的泛型
+///     参数列表内。
+/// (2) `where`注册来自于【委托·类型】的额外限定条件。宏展开后，出现于`struct A<T: Trait2, K: Trait3>`的泛型
+///     参数列表内。（假设`K`是【委托·目标·字段】的泛型类型）
+/// (3) 【委托·目标·类型】的泛型参数`T`需要满足`Trait1 + Trait2`的全部限定条件。
+/// (4) 【委托·目标·类型】自身需要满足`A + Trait3`的限定条件。
 mod generic_trait_demo {
     mod delegating_structure {
         use ::ambassador::Delegate;
@@ -223,7 +240,7 @@ mod generic_trait_demo {
             cat: Pet
         }
         /// #2. 【`trait`泛型参数】（含【限定条件】）被添加于【委托·目标（字段）类型】的
-        ///     `trait`实现块上。
+        ///     `trait`实现块的`where`从句内。
         impl<'a, 'b, T> ShoutGeneric<'a, 'b, T, String> for Pet where 'a: 'b, T: Display {
             fn shout(&self, input1: &'a str, input2: &'b T) -> String {
                 format!("[{}] {}, {} - meow!", self.name(), input1, input2)
