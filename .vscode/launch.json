@@ -4,7 +4,7 @@
     // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [{
-        "name": "启动",
+        "name": "例程",
         "type": "lldb",
         "request": "launch",
         "cwd": "${workspaceRoot}",
@@ -19,15 +19,26 @@
                 "${fileBasenameNoExtension}"
             ]
         }
-    }],
-    "inputs": [{
-        "type": "pickString",
-        "id": "ambassador-where",
-        "description": "ambassador where?",
-        "options": [
-          "--no-default-features",
-          "--features=ambassador-where"
-        ],
-        "default": "--features=ambassador-where"
-      }]
+    }, {
+        "name": "cargo-offline",
+        "type": "lldb",
+        "request": "launch",
+        "cwd": "${workspaceRoot}",
+        "console": "internalConsole",
+        "sourceLanguages": ["rust"],
+        "cargo": {
+            "args": [
+                "build",
+                "--offline",
+                "--no-default-features",
+                "${input:cargo-metadata-config}",
+                "--bin",
+                "cargo-offline"
+            ]
+        },
+        "args": [
+            "offline",
+            "check"
+        ]
+    }]
 }

@@ -25,7 +25,6 @@ mod delegated_structure {
         name: String
     }
     impl Pet {
-        #[cfg(feature = "ambassador-where")]
         pub fn name(&self) -> &str {
             &self.name
         }
