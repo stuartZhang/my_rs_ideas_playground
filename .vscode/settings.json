@@ -1,11 +1,26 @@
 {
     "rust-analyzer.checkOnSave.overrideCommand": [
         "cargo",
+        "offline",
         "check",
-        // "--quiet",
+        "--workspace",
+        "--message-format=json",
+        "--features=cargo-metadata",
+        "--features=ambassador-where"
+    ],
+    "rust-analyzer.cargo.buildScripts.overrideCommand": [
+        "cargo",
+        "offline",
+        "check",
+        "--quiet",
         "--workspace",
         "--message-format=json",
         "--all-targets",
-        "--offline"
+        "--features=cargo-metadata",
+        "--features=ambassador-where"
+    ],
+    "rust-analyzer.cargo.features": [
+        "cargo-metadata",
+        "ambassador-where"
     ]
 }

@@ -34,8 +34,5 @@ features = ['preserve_order']
 [features]
 ambassador-where = []
 cargo-metadata = ['cargo_toml']
-default = [
-    'ambassador-where',
-    'cargo-metadata',
-]
+default = []
 toml-config = []
