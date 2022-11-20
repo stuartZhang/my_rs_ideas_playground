@@ -4,7 +4,7 @@ edition = '2021'
 version = '0.1.0'
 
 [package.metadata]
-last-modified-system-time = 1668555857
+last-modified-system-time = 1668932154
 
 [dependencies]
 ambassador = '0.3.5'

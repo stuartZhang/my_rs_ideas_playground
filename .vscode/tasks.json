@@ -29,10 +29,9 @@
     }, {
         "label": "例程",
         "args": [
+            "offline",
             "run",
             "-v",
-            "--offline",
-            "--no-default-features",
             "${input:ambassador-where}",
             "--bin",
             "${fileBasenameNoExtension}"
@@ -62,16 +61,16 @@
     }, {
         "label": "cargo-offline",
         "args": [
+            "offline",
             "run",
             "-v",
-            "--offline",
-            "--no-default-features",
             "${input:cargo-metadata-config}",
             "--bin",
             "cargo-offline",
             "--",
             "offline",
-            "check"
+            "check",
+            "${input:cargo-metadata-config}"
         ],
         "command": "cargo",
         "presentation": {
