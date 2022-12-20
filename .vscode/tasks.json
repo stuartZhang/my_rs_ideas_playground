@@ -1,10 +1,30 @@
 {
     "version": "2.0.0",
     "tasks": [{
-        "label": "build",
-        "args": ["build", "-v"],
+        "label": "clean",
+        "args": ["clean"],
         "command": "cargo",
-        "group": "build",
+        "presentation": {
+            "reveal": "always"
+        }
+    }, {
+        "label": "Run:例程",
+        "args": [
+            "offline",
+            "run",
+            "-v",
+            "${input:ambassador-where}",
+            "--bin",
+            "${fileBasenameNoExtension}"
+        ],
+        "command": "cargo",
+        "presentation": {
+            "reveal": "always"
+        },
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        },
         "problemMatcher": [{
             "owner": "rust",
             "fileLocation": ["relative", "${workspaceRoot}"],
@@ -20,17 +40,12 @@
             }
         }]
     }, {
-        "label": "clean",
-        "args": ["clean"],
-        "command": "cargo",
-        "presentation": {
-            "reveal": "always"
-        }
-    }, {
-        "label": "例程",
+        "label": "Doc:例程",
         "args": [
             "offline",
-            "run",
+            "doc",
+            "--no-deps",
+            "--open",
             "-v",
             "${input:ambassador-where}",
             "--bin",

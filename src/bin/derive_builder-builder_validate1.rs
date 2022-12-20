@@ -23,11 +23,15 @@ mod factory {
             // 【字段·默认值】是不过【验证·函数】的。所以，`default1 = 12`不会
             // 引起结构体验证失败。
             // 【默认值】被应用于【验证·通过】之后。
-            if let Some(default1) = self.default1 && default1 <= 15 {
-                return Err("无效默认值".into());
+            if let Some(default1) = self.default1 {
+                if default1 <= 15 {
+                    return Err("无效默认值".into());
+                }
             }
-            if let Some(validate1) = self.validate1 && validate1 <= 20 {
-                return Err("无效验证值".into());
+            if let Some(validate1) = self.validate1 {
+                if validate1 <= 20 {
+                    return Err("无效验证值".into());
+                }
             }
             Ok(())
         }
