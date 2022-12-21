@@ -28,13 +28,13 @@
 //!
 //! 【无人机】三个状态各有独特的行为：
 //! 1. `Idle`有`take_off()`起飞·行为，从而将`Idle`状态过渡为`Flying`
-//! 2. `Hovering`有`move_to()`前往·与`load()`着落·两个行为，从而将`Hovering`状态过渡为`Flying`
+//! 2. `Hovering`有`move_to()`前往·与`land()`着落·两个行为，从而将`Hovering`状态过渡为`Flying`
 //! 3. `Flying`有`fly()`飞行·行为。该行为
 //!     1. 既是【异步】的：
 //!         * 用跨线程【迭代器】模拟【无人机】（缓慢）飞行过程。
 //!     2. 还是【多态】的：
-//!         1. 若前一个状态是`Idle`，那么状态过渡的目标就是`Hovering`。即，`Idle -> Flying -> Hovering`
-//!         2. 若前一个状态是`Hovering`，那么状态过渡的目标就是`Idle`。即，`Hovering -> Flying -> Idle`
+//!         1. 若紧前状态是`Idle`，那么当前状态过渡的目标就一定是`Hovering`。即，`Idle -> Flying -> Hovering`
+//!         2. 若紧前状态是`Hovering`，那么当前状态过渡的目标既有可能是`Idle`，还可能还是`Hovering`。这取决于之前`Hovering`是如何过渡到`Flying`的。
 //!
 //!         `fly()`行为的输出状态是不确定的，得看它的紧上一个状态是什么！
 //!
@@ -308,6 +308,8 @@ mod drone_model {
             })
         }
     }
+    /// Idle - 无人机·在地面上
+    ///
     /// 【待命】状态独有的【关联函数】与【成员方法】
     impl Drone<Idle> {
         /// 所有【新】无人机都得从【待命】状态开始，因为无人机的其它状态
@@ -337,6 +339,8 @@ mod drone_model {
             }
         }
     }
+    /// Hovering - 无人机·原地悬浮于空中
+    ///
     /// 【悬浮】状态独有的成员方法
     impl Drone<Hovering> {
         /// 【着落 - 状态·过渡】无人机·从空中到地面
@@ -364,6 +368,8 @@ mod drone_model {
             }
         }
     }
+    /// Flying<S: Motionless> - 无人机·空中飞行。它的下一个状态必须是隶属于`Motionless`组的状态
+    ///
     /// 【飞行】状态独有的成员方法
     impl<S> Drone<Flying<S>>
     where S: Motionless {
