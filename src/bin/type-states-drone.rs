@@ -10,6 +10,7 @@
 //! 6. 编译时多态的【状态过渡】（见`Drone<Flying<Idle>>::fly(mut self, step)`和`Drone<Flying<Hovering>>::fly(mut self, step)`）
 //! 7. 【状态】独有成员方法（见`Drone<Idle>::take_off(self)`）
 //! 8. 【状态】独有数据缓存字段（见`Flying<S: Motionless>.origin`）
+//! 9. `intra-doc link`文档注释指令
 //!
 //! 【无人机】飞行过程与状态结点包括：
 //!
