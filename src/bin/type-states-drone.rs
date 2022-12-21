@@ -165,11 +165,11 @@ mod drone_model {
         // -------------------------
         // 状态·类型 — 描述·无人机·工作状态
         // -------------------------
-        /// 无人机·在地面上
+        /// [`Drone<Idle>`](struct@super::Drone#impl-Drone<Idle>) 无人机·在地面上
         pub struct Idle;
-        /// 无人机·原地悬浮于空中
+        /// [`Drone<Hovering>`](struct@super::Drone#impl-Drone<Hovering>) 无人机·原地悬浮于空中
         pub struct Hovering;
-        /// 无人机·空中飞行。它的下一个状态必须是隶属于`Motionless`组的状态
+        /// [`Drone<Flying<S: Motionless>>`](struct@super::Drone#impl-Drone<Flying<S>>) 无人机·空中飞行。它的下一个状态必须是隶属于`Motionless`组的状态
         #[derive(Builder, Debug, Default)]
         #[builder(pattern = "owned")]
         pub struct Flying<S>
@@ -308,7 +308,7 @@ mod drone_model {
             })
         }
     }
-    /// Idle - 无人机·在地面上
+    /// [`Idle`](struct@drone_states::Idle) - 无人机·在地面上
     ///
     /// 【待命】状态独有的【关联函数】与【成员方法】
     impl Drone<Idle> {
@@ -339,7 +339,7 @@ mod drone_model {
             }
         }
     }
-    /// Hovering - 无人机·原地悬浮于空中
+    /// [`Hovering`](struct@drone_states::Hovering) - 无人机·原地悬浮于空中
     ///
     /// 【悬浮】状态独有的成员方法
     impl Drone<Hovering> {
@@ -368,7 +368,7 @@ mod drone_model {
             }
         }
     }
-    /// Flying<S: Motionless> - 无人机·空中飞行。它的下一个状态必须是隶属于`Motionless`组的状态
+    /// [`Flying<S: Motionless>`](struct@drone_states::Flying) - 无人机·空中飞行。它的下一个状态必须是隶属于`Motionless`组的状态
     ///
     /// 【飞行】状态独有的成员方法
     impl<S> Drone<Flying<S>>
