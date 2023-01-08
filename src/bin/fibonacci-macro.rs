@@ -5,7 +5,7 @@ mod fibonacci {
     const VALUE_COUNT: usize = 2;
     #[derive(Clone)]
     pub struct Fibonacci {
-        // 缓存序列中的最后2个值。然后，根据被缓存下来的值，计算序列中下一个新值。
+        // 缓存序列中的最后2个值。然后，根据被缓存下来的值，计算序列下一个新值。
         init_values: [ValueType; VALUE_COUNT],
         sequence_length: usize
     }
@@ -63,6 +63,9 @@ mod fibonacci {
     }
 }
 macro_rules! sequence {
+    // 1. 缓存序列中的最后`$length`个值。
+    // 2. 根据被缓存下来的值，计算序列下一个新值。
+    // 3. 懒生成一个定制规则的数字序列
     ($array: ident [$type : ty; $length: ident] = $($init: expr),+; ...; $eval: expr) => [{
         mod sequence {
             use ::std::{iter::Iterator, mem};
@@ -71,7 +74,7 @@ macro_rules! sequence {
             const VALUE_COUNT: usize = sequence!(@len $($init),+);
             #[derive(Clone)]
             pub struct Sequence {
-                // 缓存序列中的最后`VALUE_COUNT`个值。然后，根据被缓存下来的值，计算序列中下一个新值。
+                // 缓存序列中的最后`VALUE_COUNT`个值。然后，根据被缓存下来的值，计算序列下一个新值。
                 init_values: [ValueType; VALUE_COUNT],
                 sequence_length: usize
             }
