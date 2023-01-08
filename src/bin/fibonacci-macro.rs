@@ -5,6 +5,7 @@ mod fibonacci {
     const VALUE_COUNT: usize = 2;
     #[derive(Clone)]
     pub struct Fibonacci {
+        // 缓存序列中的最后2个值。然后，根据被缓存下来的值，计算序列中下一个新值。
         init_values: [ValueType; VALUE_COUNT],
         sequence_length: usize
     }
@@ -61,27 +62,28 @@ mod fibonacci {
         }
     }
 }
-macro_rules! fibonacci {
+macro_rules! sequence {
     ($array: ident [$type : ty; $length: ident] = $($init: expr),+; ...; $eval: expr) => [{
-        mod fibonacci {
+        mod sequence {
             use ::std::{iter::Iterator, mem};
             use index_offset::IndexOffset;
             type ValueType = $type;
-            const VALUE_COUNT: usize = fibonacci!(@len $($init),+);
+            const VALUE_COUNT: usize = sequence!(@len $($init),+);
             #[derive(Clone)]
-            pub struct Fibonacci {
+            pub struct Sequence {
+                // 缓存序列中的最后`VALUE_COUNT`个值。然后，根据被缓存下来的值，计算序列中下一个新值。
                 init_values: [ValueType; VALUE_COUNT],
                 sequence_length: usize
             }
-            impl Default for Fibonacci {
+            impl Default for Sequence {
                 fn default() -> Self {
-                    Fibonacci {
+                    Sequence {
                         init_values: [$($init),+],
                         sequence_length: 0
                     }
                 }
             }
-            impl Iterator for Fibonacci {
+            impl Iterator for Sequence {
                 type Item = ValueType;
                 fn next(&mut self) -> Option<Self::Item> {
                     let $length = self.sequence_length;
@@ -126,26 +128,28 @@ macro_rules! fibonacci {
                 }
             }
         }
-        fibonacci::Fibonacci::default()
+        sequence::Sequence::default()
     }];
     // 利用`Incremental TT Muncher`与`Push-down Accumulation`设计模式，
-    // 计算宏循环结构迭代次数。
+    // 计算宏循环结构的迭代次数。
     (@len ($muncher: tt) -> ($count: expr)) => {
         1 + $count
     };
     (@len ($muncher: tt, $($remainder: tt),+) -> ($count: expr)) => {
-        fibonacci!(@len ($($remainder),+) -> (1 + $count))
+        sequence!(@len ($($remainder),+) -> (1 + $count))
     };
     (@len $($remainder: tt),+) => {
-        fibonacci!(@len ($($remainder),+) -> (0))
+        sequence!(@len ($($remainder),+) -> (0))
     };
 }
 use fibonacci::Fibonacci;
 fn main() {
     let sequence = Fibonacci::default().take(10).collect::<Vec<u64>>();
     dbg!(sequence);
-    let sequence = fibonacci!(cache_slice[u64; length] = 0, 1; ...; cache_slice[length - 1] + cache_slice[length - 2]).take(10).collect::<Vec<u64>>();
+    // 【斐波纳契】数列
+    let sequence = sequence!(cache_slice[u64; length] = 0, 1; ...; cache_slice[length - 1] + cache_slice[length - 2]).take(10).collect::<Vec<u64>>();
     dbg!(sequence);
-    let sequence = fibonacci!(cache_slice[f64; length] = 1_f64; ...; cache_slice[length - 1] * length as f64).take(10).collect::<Vec<f64>>();
+    // 其它数列
+    let sequence = sequence!(cache_slice[f64; length] = 1_f64; ...; cache_slice[length - 1] * length as f64).take(10).collect::<Vec<f64>>();
     dbg!(sequence);
 }
