@@ -19,6 +19,7 @@ mod fibonacci {
     }
     impl Iterator for Fibonacci {
         type Item = ValueType;
+        #[inline(always)]
         fn next(&mut self) -> Option<Self::Item> {
             let sequence_length = self.sequence_length;
             self.sequence_length += 1;
@@ -52,6 +53,7 @@ mod fibonacci {
         }
         impl<'a> Index<usize> for IndexOffset<'a> {
             type Output = ValueType;
+            #[inline(always)]
             fn index(&self, index: usize) -> &Self::Output {
                 // 无符号数的环绕减法避免负值溢出
                 if self.sequence_length.wrapping_sub(index) > VALUE_COUNT {
@@ -88,6 +90,7 @@ macro_rules! sequence {
             }
             impl Iterator for Sequence {
                 type Item = ValueType;
+                #[inline(always)]
                 fn next(&mut self) -> Option<Self::Item> {
                     let $length = self.sequence_length;
                     self.sequence_length += 1;
@@ -121,6 +124,7 @@ macro_rules! sequence {
                 }
                 impl<'a> Index<usize> for IndexOffset<'a> {
                     type Output = ValueType;
+                    #[inline(always)]
                     fn index(&self, index: usize) -> &Self::Output {
                         // 无符号数的环绕减法避免负值溢出
                         if self.sequence_length.wrapping_sub(index) > VALUE_COUNT {
