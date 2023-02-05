@@ -16,7 +16,7 @@ macro_rules! mathematics {
     ($action: ident; $head: tt, $($tail: tt)+) => [{
         #[cfg(debug_assertions)]
         println!(r#"{:17}| $tail = "{}""#, format!("$head = {}", stringify!($head)), stringify!($($tail)+));
-        ::std::cmp::$action($head, mathematics!($action; $($tail)+))
+        mathematics!(@$action $head, $($tail)+)
     }];
     /*
         从不确定长度的输入`tt`序列中，每次仅取出前三个输入`tt`处理。
@@ -26,7 +26,7 @@ macro_rules! mathematics {
     ($action: ident; $name: ident = $head: tt, $($tail: tt)+) => [{
         #[cfg(debug_assertions)]
         println!(r#"{:17}| $tail = "{}""#, format!("{} = {}", stringify!($name), stringify!($head)), stringify!($($tail)+));
-        ::std::cmp::$action($head, mathematics!($action; $($tail)+))
+        mathematics!(@$action $head, $($tail)+)
     }];
     // 将 键 = 表达式 降级为 键 = 值，再递归处理
     ($action: ident; $name: ident = $head: expr, $($tail: tt)+) => [{
@@ -39,7 +39,13 @@ macro_rules! mathematics {
     ($action: ident; $head: expr, $($tail: tt)+) => [{
         #[cfg(debug_assertions)]
         println!(r#"{:17}| $tail = "{}""#, format!("$head = {}", stringify!($head)), stringify!($($tail)+));
-        ::std::cmp::$action($head, mathematics!($action $($tail)+))
+        mathematics!(@$action $head, $($tail)+)
+    }];
+    (@min $head: tt, $($tail: tt)+) => [{
+        ::std::cmp::min($head, mathematics!(min; $($tail)+))
+    }];
+    (@max $head: tt, $($tail: tt)+) => [{
+        ::std::cmp::max($head, mathematics!(max; $($tail)+))
     }];
     // -------- 递归结束条件 --------
     /*
