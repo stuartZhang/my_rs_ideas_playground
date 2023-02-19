@@ -31,44 +31,48 @@
  */
 macro_rules! printable_tuple {
     [@typeVal  () -> (($($vo: tt)*), ($($to: tt)*))
-        @decorate $(#[$meta: meta])*] => {{ // `TT Bundling`将`: tt`升级为`: meta`
-        $(#[$meta])*
-        #[derive(Debug)]
-        struct Printable($($to)*);
-        Printable($($vo)*)
+     @decorate $(#[$meta: meta])*] => {{ // `TT Bundling`将`: tt`升级为`: meta`
+          $(#[$meta])*
+          #[derive(Debug)]
+          struct Printable($($to)*);
+          Printable($($vo)*)
     }};
     [@typeVal  ($vi: expr; $ti: ty) -> (($($vo: tt)*), ($($to: tt)*))
-        @decorate $($meta: tt)*] => { // `TT Bundling`作为`: tt`透传
-        printable_tuple!(@typeVal  () -> (($($vo)* $vi,), ($($to)* $ti,))
-                            @decorate $($meta)*)
+     @decorate $($meta: tt)*] => { // `TT Bundling`作为`: tt`透传
+          printable_tuple!(@typeVal  () -> (($($vo)* $vi,), ($($to)* $ti,))
+                           @decorate $($meta)*)
     };
     [@typeVal  ($vi: expr; $ti: ty, $($rest: tt)*) -> (($($vo: tt)*), ($($to: tt)*))
-        @decorate $($meta: tt)*] => { // `TT Bundling`作为`: tt`透传
-        printable_tuple!(@typeVal  ($($rest)*) -> (($($vo)* $vi,), ($($to)* $ti,))
-                            @decorate $($meta)*)
+     @decorate $($meta: tt)*] => { // `TT Bundling`作为`: tt`透传
+          printable_tuple!(@typeVal  ($($rest)*) -> (($($vo)* $vi,), ($($to)* $ti,))
+                           @decorate $($meta)*)
     };
     ($(#[$meta: meta])+ $($body:tt)*) => {
-        printable_tuple!(@typeVal  ($($body)*) -> ((), ())
-                            @decorate $(#[$meta])*) // `TT Bundling`将`: meta`降级为`: tt`
+          printable_tuple!(@typeVal  ($($body)*) -> ((), ())
+                           @decorate $(#[$meta])*) // `TT Bundling`将`: meta`降级为`: tt`
     };
     ($($body:tt)*) => {
-        printable_tuple!(@typeVal  ($($body)*) -> ((), ())
-                            @decorate)
+          printable_tuple!(@typeVal  ($($body)*) -> ((), ())
+                           @decorate)
     };
 }
 fn main() {
     // 测试
-    let printable = printable_tuple!(1;u32, 2;i32, 3;u8, 4;i8,
-                                     "1";&'static str, 2.0;f32, 3.0;f64, true;bool,
-                                     1;i32, 2;i32, 3;u8, 4;u32,
-                                     1;i32, 2;i32, 3;u8, 4;u32,
-                                     1;i32, 2;i32, 3;u8, 4;u32);
+    let printable = printable_tuple!(
+          1;u32, 2;i32, 3;u8, 4;i8,
+          "1";&'static str, 2.0;f32, 3.0;f64, true;bool,
+          1;i32, 2;i32, 3;u8, 4;u32,
+          1;i32, 2;i32, 3;u8, 4;u32,
+          1;i32, 2;i32, 3;u8, 4;u32
+     );
     println!("printable_tuples1: {:?}", printable);
-    let printable = printable_tuple!(#[derive(Clone, Copy)]
-                                     1;u32, 2;i32, 3;u8, 4;i8,
-                                     "1";&'static str, 2.0;f32, 3.0;f64, true;bool,
-                                     1;i32, 2;i32, 3;u8, 4;u32,
-                                     1;i32, 2;i32, 3;u8, 4;u32,
-                                     1;i32, 2;i32, 3;u8, 4;u32);
+    let printable = printable_tuple!(
+          #[derive(Clone, Copy)]
+          1;u32, 2;i32, 3;u8, 4;i8,
+          "1";&'static str, 2.0;f32, 3.0;f64, true;bool,
+          1;i32, 2;i32, 3;u8, 4;u32,
+          1;i32, 2;i32, 3;u8, 4;u32,
+          1;i32, 2;i32, 3;u8, 4;u32
+     );
     println!("printable_tuples2: {:?}", printable);
 }
