@@ -47,11 +47,11 @@ macro_rules! printable_tuple {
           printable_tuple!(@typeVal  ($($rest)*) -> (($($vo)* $vi,), ($($to)* $ti,))
                            @decorate $($meta)*)
     };
-    ($(#[$meta: meta])+ $($body:tt)*) => {
+    ($(#[$meta: meta])+ $($body: tt)*) => {
           printable_tuple!(@typeVal  ($($body)*) -> ((), ())
                            @decorate $(#[$meta])*) // `TT Bundling`将`: meta`降级为`: tt`
     };
-    ($($body:tt)*) => {
+    ($($body: tt)*) => {
           printable_tuple!(@typeVal  ($($body)*) -> ((), ())
                            @decorate)
     };
