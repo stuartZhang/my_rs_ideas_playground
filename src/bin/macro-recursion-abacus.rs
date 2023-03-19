@@ -1,10 +1,23 @@
 fn main() {
+    macro_rules! count_tokens {
+        (@replace $_t: tt @with $sub: expr) => { $sub };
+        ($($tts: tt)*) => { [$( count_tokens!(@replace $tts @with ()) ),*].len() };
+    }
     macro_rules! abacus {
         // 日志记录·内部规则
+        (@stringify [$l1: tt  $($left: tt)+]) => {
+            (&[concat!("[", stringify!($l1), "]"), $(stringify!($left)),+] as &[&str]).join("")
+        };
+        (@stringify [$l1: tt]) => {
+            concat!("[", stringify!($l1), "]")
+        };
+        (@stringify []) => {
+            ""
+        };
         (@log left = [$($left: tt)*], right = [$($right: tt)*]) => {
-            let left = (&[$(stringify!($left)),*] as &[&str]).join("");
-            let right = (&[$(stringify!($right)),*] as &[&str]).join("");
-            println!("此次输入 {left:>22} 上次输出 {right}");
+            let left = abacus!(@stringify [$($left)*]);
+            let right = abacus!(@stringify [$($right)*]);
+            println!("最新吐 {left:>24}  最后吞 {right:>7}");
         };
         // +-       抵消输出尾的 +
         ((- $($moves: tt)*) -> (+ $($count: tt)*)) => ({
@@ -14,7 +27,7 @@ fn main() {
         // -- 或 _- 新添输出尾的 -
         ((- $($moves: tt)*) -> ($($count: tt)*)) => ({
             abacus!(@log left = [- $($moves)*], right = [$($count)*]);
-           abacus!(($($moves)*) -> (- $($count)*))
+            abacus!(($($moves)*) -> (- $($count)*))
         });
         // -+       抵消输出尾的 -
         ((+ $($moves: tt)*) -> (- $($count: tt)*)) => ({
@@ -34,13 +47,14 @@ fn main() {
         // +- 个数不一致，抵消后还有剩余
         (() -> ($($count: tt)+)) => ({
             abacus!(@log left = [], right = [$($count)*]);
-            [$(stringify!($count)),*].iter().filter_map(|&token| Some(if token == "+" {
-                1
-            } else {
-                -1
-            })).sum::<i32>()
+            count_tokens!($($count)+)
         });
     }
+    println!("* 最左是栈顶，最右是栈底");
+    println!("* 最新吐与最后吞符号都被包裹在一对`[..]`内");
+    println!();
+    println!("{:_^29}  {:_^12}", "吐栈", "吞栈");
     assert_eq!(abacus!((++-+-+++--++---++----+) -> ()), 0);
-    assert_eq!(abacus!((++-+-+++--++---++----+++) -> ()), 2);
+    println!("{:_^29}  {:_^12}", "吐栈", "吞栈");
+    assert_eq!(abacus!((++--+--+---) -> ()), 3);
 }
