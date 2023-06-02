@@ -9,3 +9,10 @@ macro_rules! main {
         }
     };
 }
+macro_rules! compare_log {
+    ($statement: stmt; $var: expr) => {
+        println!("\n修改前{:?}", $var);
+        $statement
+        println!("修改后{:?}", $var);
+    };
+}
