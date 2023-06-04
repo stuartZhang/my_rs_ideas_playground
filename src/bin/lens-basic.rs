@@ -1,5 +1,5 @@
 use ::std::error::Error;
-use ::lens_rs::{LensMut, LensRef, optics, PrismMut, PrismRef, Review, TraversalMut, TraversalRef};
+use ::lens_rs::{LensMut, LensRef, optics, Optics, PrismMut, PrismRef, Review, TraversalMut, TraversalRef};
 #[path ="../utils.rs"]
 #[macro_use]
 mod utils;
@@ -18,6 +18,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         None
     );
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    let optics1: Optics![_1.Ok._1] = optics!(_1.Ok._1);
     // 类似于`R.set(R.lensPath(路径), 值, 数据结构)`，修改数据结构内指定位置上的一个值。
     { // + `view_mut()`：目标值一定存在且仅有一个
         // - 虽然目标值不能是【枚举值】下的内部数据（比如，`_1.Ok._1`）
@@ -32,7 +33,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     { // + `preview_mut()`：目标值不一定存在，且至多一个。
         // - 在“路径”内可包含`Some | None | Ok | Err`保留字，和修改【枚举值】下的内部数据。
-        compare_log!(let _ = x.preview_mut(optics!(_1.Ok._1)).map(|n| {
+        compare_log!(let _ = x.preview_mut(optics1).map(|n| {
             *n *= 2;
         }); x);
         compare_log!(let _ = x.preview_mut(optics!(_1.Ok._0.[0].Some._0)).map(|s| {
@@ -63,7 +64,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             // *n = *[10, 13].as_mut_slice(); // `Slice: ?Sized`导致编译错误。
         }); x);
         // - 完全兼容于`preview_mut()`，因为【枚举值】也能被当作至多包含一个元素项的【集合】来处理。
-        compare_log!(let _ = x.traverse_mut(optics!(_1.Ok._1)).into_iter().for_each(|n: &mut i32| {
+        compare_log!(let _ = x.traverse_mut(optics1).into_iter().for_each(|n: &mut i32| {
             *n += 3;
         }); x);
         compare_log!(let _ = x.traverse_mut(optics!(_2.[1])).into_iter().for_each(|n: &mut i32| {
