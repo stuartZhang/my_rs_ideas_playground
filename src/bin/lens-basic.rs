@@ -1,5 +1,5 @@
 use ::std::error::Error;
-use ::lens_rs::{LensMut, LensRef, optics, PrismMut, PrismRef, TraversalMut, TraversalRef};
+use ::lens_rs::{LensMut, LensRef, optics, PrismMut, PrismRef, Review, TraversalMut, TraversalRef};
 #[path ="../utils.rs"]
 #[macro_use]
 mod utils;
@@ -87,14 +87,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("{:23}{:?}", "目标值是【集合】内被索引的单个【元素】", x.view_ref(optics!(_2.[1..].[1])));
     }
     { // + `preview_ref()`：在“路径”内包含`Some | None | Ok | Err`保留字，和拾取出【枚举值】下的内部数据。
-        println!("{:29}{:?}", "目标值是【枚举值】下的直接内部数据", x.preview_ref(optics!(_3.Some)));
-        println!("{:29}{:?}", "目标值是【枚举值】下的嵌套内部数据", x.preview_ref(optics!(_1.Ok._0.[0].Some._0)));
+        println!("{:25}{:?}", "目标值是【枚举值】下的直接内部数据", x.preview_ref(optics!(_3.Some)));
+        println!("{:25}{:?}", "目标值是【枚举值】下的嵌套内部数据", x.preview_ref(optics!(_1.Ok._0.[0].Some._0)));
     }
     { // + `traverse_ref()`：在“路径”内包含【集合】，和拾取出【集合】下的内部数据。
-        println!("{:23}{:?}", "目标值是【集合】自身", x.traverse_ref(optics!(_2._mapped)));
-        println!("{:23}{:?}", "目标值是【集合】的过滤子集", x.traverse_ref(optics!(_1.Ok._0._mapped.Some)));
+        println!("{:32}{:?}", "目标值是【集合】自身", x.traverse_ref(optics!(_2._mapped)));
+        println!("{:29}{:?}", "目标值是【集合】的过滤子集", x.traverse_ref(optics!(_1.Ok._0._mapped.Some)));
         println!("{:23}{:?}", "目标值是【集合】内被索引的一段【切片】", x.traverse_ref(optics!(_2.[1..])));
         println!("{:23}{:?}", "目标值是【集合】内被索引的单个【元素】", x.traverse_ref(optics!(_2.[1])));
+    }
+    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    { // + 根据“路径”从零构造出一个数据结构实例
+        let y: Result<Option<Result<(), (i32, i32)>>, ()> = Review::review(optics!(Ok.Some.Err), (1, 2));
+        println!("{:23}{:?}", "构造数据结构实例", y);
     }
     Ok(())
 }
