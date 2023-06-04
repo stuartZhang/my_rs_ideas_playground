@@ -25,7 +25,7 @@ rustflags = [
     "-Wunreachable_pub", # 对仅在当前`crate`范围内可见的项`Item`，请使用`pub(crate)`而不是`pub`，因为后者容易让读者误解为该项也对下游`crate`可见 — 即，其可见域超出了当前`crate`。
     "-Wunsafe_op_in_unsafe_fn", # 多用粒度更细的`unsafe block`而不是粗粒度的`unsafe fn`
     "-Wunstable_features",
-    "-Dunused_crate_dependencies", # 静默此`lint`：`use foo as _;`
+    "-Aunused_crate_dependencies", # 静默此`lint`：`use foo as _;`
     "-Dunused_extern_crates", # 静默此`lint`：`extern crate foo as _;`
     "-Wunused_import_braces",
     "-Dunused_lifetimes",

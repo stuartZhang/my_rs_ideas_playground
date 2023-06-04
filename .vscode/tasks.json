@@ -10,7 +10,6 @@
     }, {
         "label": "Run:例程",
         "args": [
-            "offline",
             "run",
             "-v",
             "${input:ambassador-where}",
@@ -42,7 +41,6 @@
     }, {
         "label": "Doc:例程",
         "args": [
-            "offline",
             "doc",
             "--no-deps",
             "--open",
@@ -76,7 +74,6 @@
     }, {
         "label": "cargo-offline",
         "args": [
-            "offline",
             "run",
             "-v",
             "${input:cargo-metadata-config}",
