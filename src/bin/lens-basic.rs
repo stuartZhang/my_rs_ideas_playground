@@ -1,8 +1,8 @@
-use ::std::error::Error;
-use ::lens_rs::{LensMut, LensRef, optics, Optics, PrismMut, PrismRef, Review, TraversalMut, TraversalRef};
 #[path ="../utils.rs"]
 #[macro_use]
 mod utils;
+use ::std::error::Error;
+use ::lens_rs::{LensMut, LensRef, optics, Optics, PrismMut, PrismRef, Review, TraversalMut, TraversalRef};
 fn main() -> Result<(), Box<dyn Error>> {
     let mut x: (i32, Result<(Vec<Option<(String, i32)>>, i32), ()>, Vec<i32>, Option<String>) = (
         1,
