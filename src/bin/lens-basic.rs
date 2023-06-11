@@ -57,18 +57,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         compare_log!(let _ = x.traverse_mut(optics!(_2._mapped)).into_iter().for_each(|n: &mut i32| {
             *n -= 1;
         }); x);
-        // - `[N..]`索引一段【切片】，但不可整体赋值，因为`Slice: ?Sized`
-        compare_log!(let _ = x.traverse_mut(optics!(_2.[1..])).into_iter().for_each(|n: &mut [i32]| {
-            n[0] = 10;
-            n[1] = 13;
-            // *n = *[10, 13].as_mut_slice(); // `Slice: ?Sized`导致编译错误。
+        // - `[N..]`索引一段【切片】需要对迭代器使用扁平化配合器`.flatten()`。
+        compare_log!(let _ = x.traverse_mut(optics!(_2.[1..])).into_iter().flatten().for_each(|n: &mut i32| {
+            *n += 2;
         }); x);
         // - 完全兼容于`preview_mut()`，因为【枚举值】也能被当作至多包含一个元素项的【集合】来处理。
         compare_log!(let _ = x.traverse_mut(optics1).into_iter().for_each(|n: &mut i32| {
             *n += 3;
-        }); x);
-        compare_log!(let _ = x.traverse_mut(optics!(_2.[1])).into_iter().for_each(|n: &mut i32| {
-            *n += 2;
         }); x);
         // - 完全兼容于`view_mut()`，因为【一定存在值】也能被当作仅只包含一个元素项的【集合】来处理。
         compare_log!(let _ = x.traverse_mut(optics!(_0)).into_iter().for_each(|n: &mut i32| {
