@@ -79,7 +79,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         compare_log!(*custom.view_mut(optics!(baz.ownership.[0])) = "12"; custom);
         /* 禁忌：
         （1）就自定义枚举类而言，`trait ::lens_rs::LensMut`没有被默认实现，所以不能像`Option<T>`与`Result<T, E>`
-             那样直接定位被封装于枚举值内的【单值】和修改之。于是，如下语句都是非法的。
+             那样直接定位和修改被封装于枚举值内的【单值】。于是，如下语句都是非法的。
              ```
              let _ = custom.view_mut(optics!(either.Right)).as_mut().map(|s: &mut String| {
                 *s = "right_2".to_string();
@@ -91,7 +91,7 @@ fn main() -> Result<(), Box<dyn Error>> {
          */
     }
     { // + `preview_mut()`：目标值不一定存在，且至多一个。
-        // - 在“路径”内可包含`Some | None | Ok | Err`保留字，和修改【枚举值】下的内部数据。
+        // - 在“路径”内可包含自定义【枚举值】。
         compare_log!(let _ = custom.preview_mut(optics!(either1.Left._0)).map(|n: &mut i32| {
             *n *= 3;
         }); custom);
