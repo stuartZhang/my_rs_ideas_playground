@@ -102,7 +102,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             *s = "right_2".to_string();
         }); custom);
     }
-    { // + `traverse_mut()`：目标值不一定存在或有多个，因为在“路径”内包含【集合·片段】。
+    { // + `traverse_mut()`：目标值不一定存在或有多个，因为在“路径”内包含【集合/切片】。
         // - `_mapped`意味着【遍历】全部元素，但仅适用于变长数组
         compare_log!(let _ = custom.traverse_mut(optics!(baz.ownership2._mapped)).into_iter().for_each(|s| {
             *s = s.to_uppercase();

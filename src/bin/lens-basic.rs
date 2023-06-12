@@ -48,7 +48,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             *n += 3;
         }); x);
     }
-    { // + `traverse_mut()`：目标值不一定存在或有多个，因为在“路径”内包含【集合·片段】。
+    { // + `traverse_mut()`：目标值不一定存在或有多个，因为在“路径”内包含【集合/切片】。
         // - `_mapped.Some`意味着【遍历 ➔ 过滤】出全部`Some`元素
         compare_log!(let _ = x.traverse_mut(optics!(_1.Ok._0._mapped.Some._0)).into_iter().for_each(|s| {
             *s = s.to_uppercase();
