@@ -99,9 +99,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         compare_log!(let _ = custom.traverse_mut(optics!(baz.ownership2.[1..])).into_iter().flatten().for_each(|s| {
             *s = s.to_lowercase();
         }); custom);
+        compare_log!(let _ = custom.traverse_mut(optics!(baz.ownership1.[1..])).into_iter().flatten().for_each(|s: &mut String| {
+            *s = s.to_uppercase();
+        }); custom);
         // - `_mapped`不适用于数组。相反，需要对迭代器使用扁平化配合器`.flatten()`。
         compare_log!(let _ = custom.traverse_mut(optics!(baz.ownership1)).into_iter().flatten().for_each(|s: &mut String| {
-            *s = s.to_uppercase();
+            *s = s.to_lowercase();
         }); custom);
         // - 完全兼容于`preview_mut()`，因为【枚举值】也能被当作至多包含一个元素项的【集合】来处理。
         compare_log!(let _ = custom.traverse_mut(optics!(either1.Left._0)).into_iter().for_each(|n: &mut i32| {
@@ -112,7 +115,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             *n += 1;
         }); custom);
         compare_log!(let _ = custom.traverse_mut(optics!(baz.ownership1.[2])).into_iter().for_each(|s: &mut String| {
-            *s = s.to_lowercase();
+            *s = s.to_uppercase();
         }); custom);
     }
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
