@@ -10,7 +10,7 @@ use ::lens_rs::{LensMut, LensRef, optics, Optics, Prism, PrismMut, PrismRef, Rev
 fn main() -> Result<(), Box<dyn Error>> {
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     { // 行多态·场景一：从同一个数据结构实例，根据不同的路径，从不同的位置，拾取/修改子数据结构。
-        let mut x: (i32, Result<(Vec<Option<(String, i32)>>, i32), ()>, Vec<i32>, Option<String>) = (
+        let mut x: (i32, Result<(Vec<Option<(String, i32)>>, i32), ()>, Vec<i32>, Result<(i32,), String>) = (
             1,
             Ok((
                 vec![
@@ -21,23 +21,47 @@ fn main() -> Result<(), Box<dyn Error>> {
                 4,
             )),
             vec![1, 2, 3],
-            None
+            Err("错误提示".to_string())
         );
         let optics1: Optics![_2.[usize]] = optics!(_2.[1]);
-        // 在数据结构中，由路径寻找指向的目标值必须存在，因为“透镜`Lens`”路径。
+        // 在数据结构中，由路径指向的目标值必须存在，因为“透镜`Lens`”。
         fn must_have_i32<Ln, T: LensMut<Ln, i32>>(t: &mut T, ln: Ln) {
             *t.view_mut(ln) += 1;
         }
+        // - 路径目标一定存在
         compare_log!(must_have_i32(&mut x, optics!(_0)); x);
         compare_log!(must_have_i32(&mut x, optics1); x);
-        // 在数据结构中，由路径寻找指向的目标值既可存在也可不存在，因为“棱镜`Prism`”路径。
+        // - 路径目标可能不存在的情况是处理不了的，且会导致编译失败。
+        // - 路径目标一定不存在的情况是处理不了的，且会导致编译失败。
+        // 在数据结构中，由路径指向的目标值既可存在也可不存在，因为“棱镜`Prism`”。
         fn may_have_i32<Pm, T: PrismMut<Pm, i32>>(t: &mut T, pm: Pm) {
             t.preview_mut(pm).map(|x| {
                 *x += 1
             });
         }
-        compare_log!(may_have_i32(&mut x, optics!(_1.Ok._1)); x);
+        // - 路径目标可能存在，但不确定
+        compare_log!(may_have_i32(&mut x, optics!(_3.Ok._1)); x); // 之不存在
+        compare_log!(may_have_i32(&mut x, optics!(_1.Ok._1)); x); // 之存在
+        // - 路径目标一定存在
+        compare_log!(may_have_i32(&mut x, optics!(_0)); x);
         compare_log!(may_have_i32(&mut x, optics1); x);
+        // - 路径目标一定不存在的情况是处理不了的，且会导致编译失败。
+        // 在数据结构中，由路径寻找指向的目标值是一个集合，因为“棱镜`Traversal`”。
+        fn may_have_multi_i32<Tl, T: TraversalMut<Tl, i32>>(t: &mut T, tl: Tl) {
+            t.traverse_mut(tl).into_iter().for_each(|x| { // 遍历每一个路径匹配项
+                *x += 1
+            });
+        }
+        // - 路径目标可能存在多个或一个都没有，但不确定
+        compare_log!(may_have_multi_i32(&mut x, optics!(_1.Ok._0._mapped.Some._1)); x);
+        compare_log!(may_have_multi_i32(&mut x, optics!(_2._mapped)); x);
+        // - 路径目标可能存在，但不确定
+        compare_log!(may_have_multi_i32(&mut x, optics!(_3.Ok._1)); x); // 之不存在
+        compare_log!(may_have_multi_i32(&mut x, optics!(_1.Ok._1)); x); // 之存在
+        // - 路径目标一定存在
+        compare_log!(may_have_multi_i32(&mut x, optics!(_0)); x);
+        compare_log!(may_have_multi_i32(&mut x, optics1); x);
+        // - 路径目标一定不存在的情况是处理不了的，且会导致编译失败。
     }
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
