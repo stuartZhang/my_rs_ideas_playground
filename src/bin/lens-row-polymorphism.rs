@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             Err("错误提示".to_string())
         );
         let optics1: Optics![_2.[usize]] = optics!(_2.[1]);
-        // 在数据结构中，由路径指向的目标值必须存在，因为“透镜`Lens`”。
+        // 因为使用“透镜`Lens`”路径，由路径指向的目标值在数据结构内必须存在。
         fn must_have_i32<P, V, T>(t: &mut T, lens: P)
         where V: AddAssign<i32>,
               T: LensMut<P, V> {
@@ -35,7 +35,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         compare_log!(must_have_i32(&mut x, optics1); x);
         // - 路径目标可能不存在的情况是处理不了的，且会导致编译失败。
         // - 路径目标一定不存在的情况是处理不了的，且会导致编译失败。
-        // 在数据结构中，由路径指向的目标值既可存在也可不存在，因为“棱镜`Prism`”。
+        // 因为使用“棱镜`Prism`”路径，由路径指向的目标值在数据结构内允许不存在。
         fn may_have_i32<P, V, T>(t: &mut T, prism: P)
         where V: AddAssign<i32>,
               T: PrismMut<P, V> {
@@ -43,14 +43,15 @@ fn main() -> Result<(), Box<dyn Error>> {
                 *x += 1
             });
         }
-        // - 路径目标可能存在，但不确定
-        compare_log!(may_have_i32::<_, i32, _>(&mut x, optics!(_3.Ok._1)); x); // 之不存在
-        compare_log!(may_have_i32(&mut x, optics!(_1.Ok._1)); x); // 之存在
-        // - 路径目标一定存在
+        // - 路径目标不存在
+        compare_log!(may_have_i32::<_, i32, _>(&mut x, optics!(_11)); x);
+        compare_log!(may_have_i32::<_, i32, _>(&mut x, optics!(_1.Ok._11)); x);
+        compare_log!(may_have_i32::<_, i32, _>(&mut x, optics!(_3.Ok._1)); x);
+        // - 路径目标存在
+        compare_log!(may_have_i32(&mut x, optics!(_1.Ok._1)); x);
         compare_log!(may_have_i32(&mut x, optics!(_0)); x);
         compare_log!(may_have_i32(&mut x, optics1); x);
-        // - 路径目标一定不存在的情况是处理不了的，且会导致编译失败。
-        // 在数据结构中，由路径寻找指向的目标值是一个集合，因为“棱镜`Traversal`”。
+        // 因为使用“棱镜`Traversal`”路径，由路径指向的目标值在数据结构内一定是集合，哪怕是单元素集合，甚至空集合。
         fn may_have_multi_i32<P, V, T>(t: &mut T, traversal: P)
         where V: AddAssign<i32>,
               T: TraversalMut<P, V> {
@@ -94,13 +95,20 @@ fn main() -> Result<(), Box<dyn Error>> {
             a: "def".to_string(),
             c: 12
         });
-        // 使用“透镜”路径，要求目标字段在数据结构内必须存在。
-        fn with_field_a<V, T>(t: &T) -> &V
+        // 因为使用“透镜”路径，要求目标字段在数据结构内必须存在。
+        fn must_have_field_a<V, T>(t: &T) -> &V
         where T: LensRef<Optics![_1.a], V> {
             t.view_ref(optics!(_1.a))
         }
-        println!("{:29}{:?}", "Foo 数据结构内一定要存在 a 字段的【单值】", with_field_a(&foo));
-        println!("{:29}{:?}", "Bar 数据结构内一定要存在 a 字段的【单值】", with_field_a(&bar));
+        println!("{:29}{:?}", "Foo 数据结构内一定要存在 a 字段的【单值】", must_have_field_a(&foo));
+        println!("{:29}{:?}", "Bar 数据结构内一定要存在 a 字段的【单值】", must_have_field_a(&bar));
+        // 因为使用“棱镜`Prism`”路径，允许目标字段在数据结构内不存在。
+        fn may_has_field_c<V, T>(t: &T) -> Option<&V>
+        where T: PrismRef<Optics![_1.c], V> {
+            t.preview_ref(optics!(_1.c))
+        }
+        println!("{:29}{:?}", "Foo 数据结构内不存在 a 字段", may_has_field_c::<i32, _>(&foo));
+        println!("{:29}{:?}", "Bar 数据结构内存在 a 字段", may_has_field_c(&bar));
     }
     Ok(())
 }
