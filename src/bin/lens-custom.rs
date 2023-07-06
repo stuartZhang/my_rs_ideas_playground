@@ -82,7 +82,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         compare_log!(*custom.view_mut(optics!(baz.ownership1.[0])) = "12".to_string(); custom);
     }
     { // + `preview_mut()`：目标值不一定存在，且至多一个。
-        // - 在“路径”内可包含自定义【枚举值】自身（比如，`Left`, `Right`）。
+        // - 在“路径”内可包含自定义【枚举值】自身（比如，`Left`, `Right`）。或者説，“路径”目标值可以是【枚举值】下的内部数据。
         compare_log!(let _ = custom.preview_mut(optics!(either1.Left._0)).map(|n: &mut i32| {
             *n *= 3;
         }); custom);
