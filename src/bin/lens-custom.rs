@@ -76,7 +76,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     { // + `view_mut()`：目标值一定存在且仅有一个
         // - 虽然目标值不能是【枚举值】下的内部数据（比如，`either1.Left._0`）
         compare_log!(*custom.view_mut(optics!(tuple._0)) += 1; custom);
-        // - 但目标值可以是【枚举值】自身。即，在路径内不能显示地看到【枚举值】自身（比如，`Left`, `Right`）。
+        // - 但目标值可以是枚举类字段`either1`。却，在路径内不能显示地看到【枚举值】（比如，`Left`, `Right`）。
         compare_log!(*custom.view_mut(optics!(either1)) = Either::Left((15, 16)); custom);
         // - 目标值也可以是所有权【集合】内被索引的【单值】。
         compare_log!(*custom.view_mut(optics!(baz.ownership1.[0])) = "12".to_string(); custom);
