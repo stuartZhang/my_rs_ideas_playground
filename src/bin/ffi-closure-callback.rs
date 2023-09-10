@@ -32,11 +32,21 @@ macro_rules! ffi_closure_shim_fn {
         ( $($cb_fn_param_name: ident : $cb_fn_param_type: ty),* );
     ) => {
         /**
-         * 【垫片·调用函数】
+         * 【FFI·垫片·调用函数】
+         * 1. 首先，对【闭包】捕获变量“装箱”，
+         * 2. 然后，代理调用真正的 extern fn 外部函数和以 void * 指针透传【闭包】。
+         * 3. 接着，以【FFI·垫片·回调函数】接收 C 端的反馈结果和被回传的【闭包】。
+         * 4. 于是，“拆箱”【闭包】捕获变量。
+         * 5. 最后，凭借 C 端反馈结果与被“拆箱”的【闭包】捕获变量，调用【闭包】。
          */
         fn $c_fn_name<F>($( $c_fn_param_name: $c_fn_param_type, )* mut closure: F)
         where F: FnMut($( $cb_fn_param_type),*) {
             use ::std::ffi::c_void;
+            /**
+             * 【FFI·垫片·回调函数·签名】
+             * 不得不写在【外部块】之外，因为【外部类型】还没有被正式地支持需要开启 feature-gate 开关
+             */
+            type ShimCallback = unsafe extern "C" fn($( $cb_fn_param_type, )* *mut c_void);
             extern "C" {
                 /**
                  * 【外部函数】
@@ -46,7 +56,7 @@ macro_rules! ffi_closure_shim_fn {
                 fn $c_fn_name(
                     $( $c_fn_param_name: $c_fn_param_type, )*
                      // 回调函数 — 【垫片·回调函数】将作为其实参
-                    shim_callback: unsafe extern "C" fn($( $cb_fn_param_type, )* *mut c_void),
+                    shim_callback: ShimCallback,
                     // 作为状态值“兜转”传递的 Rust 端【闭包】结构体
                     closure: *mut c_void
                 );
@@ -57,8 +67,8 @@ macro_rules! ffi_closure_shim_fn {
             }
             /**
              * 【FFI·垫片·回调函数·定义】
-             * 此导出函数被刻意设计为 unsafe 的，因为需要由它的调用端自觉地确保 void * 指针之后
-             * 的数据是类型匹配的闭包结构体
+             * 此导出函数被刻意设计为 unsafe 的，因为需要由它的调用端自觉地确保 void * 指针背后
+             * 的数据值是类型匹配的【闭包】<T: Fn(..)>结构体
              */
             unsafe extern "C" fn shim_closure<F>($( $cb_fn_param_name: $cb_fn_param_type, )* closure: *mut c_void)
             where F: FnMut($( $cb_fn_param_type),*) {
@@ -67,10 +77,10 @@ macro_rules! ffi_closure_shim_fn {
             }
             /**
              * 【专化函数】
-             * 从【闭包】实例的实参推断【闭包】的具体类型。这步操作只有编译器能做。
+             * 首先，从【闭包】对象实参推断【闭包】的具体类型 — 这只有编译器能做。
              * 然后，返回被“专化”的【垫片·回调函数】。
              */
-            const fn specialize<F>(_closure: &F) -> unsafe extern "C" fn($( $cb_fn_param_type, )* *mut c_void)
+            const fn specialize<F>(_closure: &F) -> ShimCallback
             where F: FnMut($( $cb_fn_param_type),*) {
                 shim_closure::<F>
             }
