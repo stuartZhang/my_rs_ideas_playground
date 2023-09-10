@@ -36,7 +36,7 @@ macro_rules! ffi_closure_shim_fn {
          */
         fn $c_fn_name<F>($( $c_fn_param_name: $c_fn_param_type, )* mut closure: F)
         where F: FnMut($( $cb_fn_param_type),*) {
-            use ::libc::c_void;
+            use ::std::ffi::c_void;
             extern "C" {
                 /**
                  * 【外部函数】
