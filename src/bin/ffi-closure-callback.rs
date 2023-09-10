@@ -1,55 +1,89 @@
-use ::libc::{c_int, c_void};
 /**
- * 【FFI·垫片·回调函数·签名】
- * 呼应于 C 端【回调函数】的定义
- * typedef void (*Callback)(int result, void *closure);
+ * 宏
+ * 1. 功能：将（被导入）外部函数 extern "C" fn 形参中的【函数指针】升级为【闭包】。
+ * 2. 对（被导入）外部函数的要求
+ *    a. 末尾形参·必须是 void * 类型的指针变量，因为它被用来搬运来自 rust 端的【闭包】捕获变量。C 端不需要解构它们，而仅只透传。
+ *    b. 倒数第二个形参·必须是【函数指针】回调函数。而且，回调函数的末尾形参·也必须是 void * 类型的指针变量。它被用来将【闭包】捕获变量送回给 rust 端
+ *    c. 仅只支持一个回调函数。
+ * 3. 例子
+ *    C 端
+ *      // 回调函数的函数签名。注意末尾形参 void *
+ *      typedef void (*Callback)(int result, void *closure);
+ *      // 导出函数的函数签名。注意末尾两个形参 Callback 和 void *
+ *      void add_two_numbers(int a, int b, Callback cb, void *closure) {...}
+ *    Rust 端
+ *      ffi_closure_shim_fn!(
+ *          // 外部函数名 ( 外部函数形参列表，但不包括最后两个参数 )
+ *          add_two_numbers(a: c_int, b: c_int);
+ *          // 回调函数形参列表，但不包括最后一个参数
+ *          (result: c_int);
+ *      );
+ * 4. 宏私下做了哪些工作？
+ *    就上例而言，给（导入）外部函数与（导出）回调函数生成【垫片函数】。
+ *    a. （导入）外部函数的【垫片函数】装箱【闭包】捕获变量，经由 void * 类型抹平指针，透传给 C 端程序。
+ *    b. （导出）回调函数的【垫片函数】拆箱被透传的【闭包】捕获变量。再以回调函数的“有效载荷”实参，调用【闭包】。
  */
-type ShimCallback = unsafe extern "C" fn(c_int, *mut c_void);
-/**
- * 【FFI·垫片·回调函数·定义】
- * 此导出函数被刻意设计为 unsafe 的，因为需要由它的调用端自觉地确保 void * 指针之后
- * 的数据是类型匹配的闭包结构体
- */
-unsafe extern "C" fn shim_closure<F>(result: c_int, closure: *mut c_void)
-where F: FnMut(c_int) {
-    let closure = &mut *(closure as *mut F);
-    closure(result);
-}
-
-extern "C" {
-    /**
-     * 【外部函数】
-     * 导入 C 端的功能函数 API
-     * void add_two_numbers(int a, int b, Callback cb, void *closure)
-     */
-    fn add_two_numbers(
-        a: c_int,
-        b: c_int,
-        shim_callback: ShimCallback, // 回调函数 — 【垫片·回调函数】将作为其实参
-        closure: *mut c_void         // 作为状态值“兜转”传递的 Rust 端【闭包】结构体
-    );
-}
-/**
- * 【垫片·调用函数】
- */
-fn shim_add_two_numbers<F>(a: i32, b: i32, mut closure: F)
-where F: FnMut(i32) {
-    let shim_callback = specialize(&closure);
-    unsafe {
-        add_two_numbers(a, b, shim_callback, &mut closure as *mut _ as *mut c_void);
-    }
-}
-/**
- * 【专化函数】
- * 从【闭包】实例的实参推断【闭包】的具体类型。这步操作只有编译器能做。
- * 然后，返回被“专化”的【垫片·回调函数】。
- */
-const fn specialize<F>(_closure: &F) -> ShimCallback
-where F: FnMut(c_int) {
-    shim_closure::<F>
+macro_rules! ffi_closure_shim_fn {
+    (
+        // 被导入的外部函数。
+        // 形参列表内不包括“回调函数”，因为宏会自动为其添加上【回调·垫片·函数】
+        $c_fn_name: ident ( $($c_fn_param_name: ident : $c_fn_param_type: ty),* );
+        // 被导出外部（回调）函数的形参列表。
+        ( $($cb_fn_param_name: ident : $cb_fn_param_type: ty),* );
+    ) => {
+        /**
+         * 【垫片·调用函数】
+         */
+        fn $c_fn_name<F>($( $c_fn_param_name: $c_fn_param_type, )* mut closure: F)
+        where F: FnMut($( $cb_fn_param_type),*) {
+            use ::libc::c_void;
+            extern "C" {
+                /**
+                 * 【外部函数】
+                 * 导入 C 端的功能函数 API
+                 * void add_two_numbers(int a, int b, Callback cb, void *closure)
+                 */
+                fn $c_fn_name(
+                    $( $c_fn_param_name: $c_fn_param_type, )*
+                     // 回调函数 — 【垫片·回调函数】将作为其实参
+                    shim_callback: unsafe extern "C" fn($( $cb_fn_param_type, )* *mut c_void),
+                    // 作为状态值“兜转”传递的 Rust 端【闭包】结构体
+                    closure: *mut c_void
+                );
+            }
+            let shim_callback = specialize(&closure);
+            unsafe {
+                $c_fn_name($( $c_fn_param_name, )*  shim_callback, &mut closure as *mut _ as *mut c_void);
+            }
+            /**
+             * 【FFI·垫片·回调函数·定义】
+             * 此导出函数被刻意设计为 unsafe 的，因为需要由它的调用端自觉地确保 void * 指针之后
+             * 的数据是类型匹配的闭包结构体
+             */
+            unsafe extern "C" fn shim_closure<F>($( $cb_fn_param_name: $cb_fn_param_type, )* closure: *mut c_void)
+            where F: FnMut($( $cb_fn_param_type),*) {
+                let closure = &mut *(closure as *mut F);
+                closure($($cb_fn_param_name),*);
+            }
+            /**
+             * 【专化函数】
+             * 从【闭包】实例的实参推断【闭包】的具体类型。这步操作只有编译器能做。
+             * 然后，返回被“专化”的【垫片·回调函数】。
+             */
+            const fn specialize<F>(_closure: &F) -> unsafe extern "C" fn($( $cb_fn_param_type, )* *mut c_void)
+            where F: FnMut($( $cb_fn_param_type),*) {
+                shim_closure::<F>
+            }
+        }
+    };
 }
 fn main() {
+    use libc::c_int;
+    ffi_closure_shim_fn!(
+        add_two_numbers(a: c_int, b: c_int);
+        (result: c_int);
+    );
     let mut got = 0;
-    shim_add_two_numbers(1, 2, |result: c_int| got = result);
+    add_two_numbers(1, 2, |result: c_int| got = result);
     assert_eq!(got, 1 + 2);
 }
