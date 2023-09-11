@@ -13,11 +13,17 @@
  *      void add_two_numbers(int a, int b, Callback cb, void *closure) {...}
  *    Rust 端
  *      ffi_closure_shim_fn!(
- *          // 外部函数名 ( 外部函数形参列表，但不包括最后两个参数 )
- *          add_two_numbers(a: c_int, b: c_int);
- *          // 回调函数形参列表，但不包括最后一个参数
- *          (result: c_int);
+ *          // （被导入）外部函数名
+ *          add_two_numbers(
+ *              // 形参列表内不包括末尾的 void * 参数，因为宏会自动为其添加上【回调·垫片·函数】
+ *              a: c_int, b: c_int
+ *              // 注意双逗号分隔
+ *              ,,
+ *              // （被导出）回调函数。形参列表内也不包括末尾的 void * 参数，因为宏会自动为其添加上【回调·垫片·函数】
+ *              callback(result: c_int)
+ *          )
  *      );
+ *      风格有点类似于 nodejs 里的 require('util').promisify(fn) 不包含形参列表里的回调函数。
  * 4. 宏私下做了哪些工作？
  *    就上例而言，给（导入）外部函数与（导出）回调函数生成【垫片函数】。
  *    a. （导入）外部函数的【垫片函数】装箱【闭包】捕获变量，经由 void * 类型抹平指针，透传给 C 端程序。
@@ -26,10 +32,12 @@
 macro_rules! ffi_closure_shim_fn {
     (
         // 被导入的外部函数。
-        // 形参列表内不包括“回调函数”，因为宏会自动为其添加上【回调·垫片·函数】
-        $c_fn_name: ident ( $($c_fn_param_name: ident : $c_fn_param_type: ty),* );
-        // 被导出外部（回调）函数的形参列表。
-        ( $($cb_fn_param_name: ident : $cb_fn_param_type: ty),* );
+        $c_fn_name: ident (
+            // 形参列表内不包括末尾的 void * 参数，因为宏会自动为其添加上【回调·垫片·函数】
+            $( $c_fn_param_name: ident : $c_fn_param_type: ty),*,,
+            // 被导出回调函数。形参列表内也不包括末尾的 void * 参数，因为宏会自动为其添加上【回调·垫片·函数】
+            callback( $( $cb_fn_param_name: ident : $cb_fn_param_type: ty ),* )
+        )
     ) => {
         /**
          * 【FFI·垫片·调用函数】
@@ -86,12 +94,21 @@ macro_rules! ffi_closure_shim_fn {
             }
         }
     };
+    (
+        // 被导入的外部函数。
+        $c_fn_name: ident (
+            // 形参列表内不包括末尾的 void * 参数，因为宏会自动为其添加上【回调·垫片·函数】
+            // 被导出回调函数。形参列表内也不包括末尾的 void * 参数，因为宏会自动为其添加上【回调·垫片·函数】
+            callback( $( $cb_fn_param_name: ident : $cb_fn_param_type: ty ),* )
+        )
+    ) => {
+        ffi_closure_shim_fn!(,, $( $cb_fn_param_name: $cb_fn_param_type),* );
+    }
 }
 fn main() {
     use libc::c_int;
     ffi_closure_shim_fn!(
-        add_two_numbers(a: c_int, b: c_int);
-        (result: c_int);
+        add_two_numbers(a: c_int, b: c_int,, callback(result: c_int))
     );
     let mut got = 0;
     add_two_numbers(1, 2, |result: c_int| got = result);
