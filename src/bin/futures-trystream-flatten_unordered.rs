@@ -22,15 +22,12 @@ fn main() {
         });
         // d. 将三个接收端 TryStream 流合并成一个流的流
         let stream = stream::iter::<[Result<UnboundedReceiver<Result<i32, i32>>, i32>; 3]>([Ok(rx1), Ok(rx2), Ok(rx3)]);
-        // e. 以尊重迭代项的次序，压平嵌套流的流为一维的流。即，前一个（迭代项）流
-        //    的迭代项全部被收拢之后，才开始后一个（迭代项）流的迭代项的收拢处理。
-        let mut stream = stream.try_flatten();
-        assert_eq!(stream.try_next().await?, Some(1));
-        assert_eq!(stream.try_next().await?, Some(2));
-        assert_eq!(stream.next().await, Some(Err(3)));
-        assert_eq!(stream.try_next().await?, Some(4));
-        assert_eq!(stream.next().await, Some(Err(5)));
-        assert_eq!(stream.try_next().await?, None);
+        // e. 以（迭代项）流中子迭代项的随机并发次序，压平嵌套流的流为一维的流。
+        let stream = stream.try_flatten_unordered(None);
+        let mut values = stream.collect::<Vec<Result<i32, i32>>>().await;
+        println!("{values:?}");
+        values.sort();
+        assert_eq!(values, vec![Ok(1), Ok(2), Ok(4), Err(3), Err(5)]);
         Ok::<(), i32>(())
     }).unwrap();
 }
