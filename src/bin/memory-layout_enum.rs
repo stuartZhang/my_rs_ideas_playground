@@ -1,6 +1,6 @@
 fn main() {
     use ::std::mem;
-    enum Example1 { _A }
+    enum Example1 { _A, _B }
     println!("Example1: alignment = {1}; size = {0}", mem::size_of::<Example1>(), mem::align_of::<Example1>());
     #[repr(C)]
     enum Example2 { _A }
