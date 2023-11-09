@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![cfg_attr(debug_assertions, feature(trace_macros, log_syntax))]
 use libui::{controls::{Button, Group, Label, VerticalBox}, prelude::*};
 fn main() {
     // 1. 创建一个上下文
