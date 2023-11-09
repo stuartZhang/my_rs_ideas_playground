@@ -1,3 +1,4 @@
 target
 cargo-offline-config.toml
+rust-toolchain.toml
 src/bin/demo.rs

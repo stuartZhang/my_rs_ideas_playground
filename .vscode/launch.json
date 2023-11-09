@@ -12,7 +12,6 @@
         "sourceLanguages": ["rust"],
         "cargo": {
             "args": [
-                "offline",
                 "build",
                 "${input:ambassador-where}",
                 "--bin",
@@ -28,7 +27,6 @@
         "sourceLanguages": ["rust"],
         "cargo": {
             "args": [
-                "offline",
                 "build",
                 "${input:cargo-metadata-config}",
                 "--bin",
@@ -36,7 +34,6 @@
             ]
         },
         "args": [
-            "offline",
             "check",
             "${input:cargo-metadata-config}"
         ]
