@@ -1,4 +1,5 @@
 {
+    "files.trimTrailingWhitespace": true,
     "rust-analyzer.cargo.features": [
         "cargo-metadata",
         "ambassador-where"
