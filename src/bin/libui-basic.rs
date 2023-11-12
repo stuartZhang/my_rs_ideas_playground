@@ -13,7 +13,7 @@ fn main() {
             let mut label_text = String::new();
             label_text.push_str("There is a ton of text in this label.\n");
             label_text.push_str("Pretty much every unicode character is supported.\n");
-            label_text.push_str("🎉 用户界面 사용자 인터페이스");
+            label_text.push_str("🎉 用户界面");
             Label::new(&label_text)
         }, LayoutStrategy::Stretchy);    
         vbox.append({
