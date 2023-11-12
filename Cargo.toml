@@ -41,6 +41,9 @@ default-features = false
 version = '0.5.8'
 features = ['preserve_order']
 
+[target.'cfg(target_os = "macos")'.dependencies.cacao]
+version = '0.3.2'
+
 [build-dependencies]
 cc = '1.0.52'
 
