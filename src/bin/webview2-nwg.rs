@@ -1,9 +1,9 @@
 use ::deferred_future::LocalDeferredFuture;
 use ::futures::{executor::LocalPool, task::LocalSpawnExt};
 use ::native_windows_gui::{self as nwg, Event as NwgEvent, Frame, FrameBuilder, GridLayout, Window};
-use ::std::{cell::RefCell, error::Error as StdErr, rc::Rc};
+use ::std::{cell::RefCell, error::Error as StdErr, mem, rc::Rc};
 use ::webview2::{Controller, Error as WvErr, Result as WvResult};
-use ::winapi::{shared::{windef::RECT, winerror::E_FAIL}, um::winuser::{SC_RESTORE, WM_SYSCOMMAND}};
+use ::winapi::{shared::{windef::RECT, winerror::E_FAIL}, um::winuser::{GetClientRect, SC_RESTORE, WM_SYSCOMMAND}};
 fn main() -> Result<(), Box<dyn StdErr>> {
     // 开启高分辨率模式。从 COM API 开启的方式将会被废弃，推荐从【应用程序】配置清单文件开启。
     #[allow(deprecated)]
@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn StdErr>> {
     Window::builder().title("内嵌 WebView 例程").size((1024, 168)).build(&mut window)?;
     let (webview_container, webview_ready_future) = assemble_webview(&window, Frame::builder().enabled(true).parent(&window))?;
     let mut grid = GridLayout::default();
-    GridLayout::builder().max_column(Some(1)).max_row(Some(1)).child(0, 0, webview_container.as_ref()).parent(&window).build(&mut grid)?;
+    GridLayout::builder().margin([0; 4]).max_column(Some(1)).max_row(Some(1)).child(0, 0, webview_container.as_ref()).parent(&window).build(&mut grid)?;
     let mut executor = {
         let executor = LocalPool::new();
         executor.spawner().spawn_local(async move {
@@ -96,13 +96,22 @@ fn assemble_webview(window: &Window, frame_builder: FrameBuilder) -> Result<(Rc<
     return Ok((frame, webview_ready_future));
     /// 调整 webview 控件的大小·至·包含该 webview 控件的容器元素的最新大小
     fn align_webview_2_container(webview_ctrl: &Controller, frame: Rc<Frame>) -> WvResult<()> {
-        let position = frame.position();
-        let size = frame.size();
-        return webview_ctrl.put_bounds(RECT {
-            top: position.1,
-            left: position.0,
-            right: size.0 as i32,
-            bottom: size.1 as i32
-        });
+        let (successful, mut rect) = unsafe {
+            let mut rect = mem::zeroed();
+            let successful = GetClientRect(frame.handle.hwnd().ok_or(WvErr::new(E_FAIL))?, &mut rect);
+            (successful, rect)
+        };
+        if successful == 0 {
+            let position = frame.position();
+            let size = frame.size();
+            rect = RECT {
+                top: position.1,
+                left: position.0,
+                right: size.0 as i32,
+                bottom: size.1 as i32
+            }
+        }
+        println!("rect={{top: {}, left: {}, width: {}, height: {} }}", rect.top, rect.left, rect.right, rect.bottom);
+        return webview_ctrl.put_bounds(rect);
     }
 }
