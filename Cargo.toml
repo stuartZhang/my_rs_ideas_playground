@@ -26,7 +26,7 @@ libui = '0.3'
 locate-cargo-manifest = '0.2.2'
 serde = {version = '1.0.144', features = ['alloc', 'derive'], default-features = false}
 serde_json = '1.0.85'
-toml = {version = '0.5.8', features = ['preserve_order']}
+toml = {version = '0.8.8', features = ['preserve_order']}
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cacao = '0.3.2'
