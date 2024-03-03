@@ -6,10 +6,9 @@ mod utils;
 #[cfg(all(feature = "cargo-metadata", not(feature = "toml-config")))]
 mod cargo_metadata {
     use crate::TAction;
-    use ::cargo_toml::Manifest;
+    use ::cargo_toml::{Manifest, Value};
     use ::derive_builder::Builder;
     use ::std::{collections::HashMap, error::Error, io::Write, fs::File, io::Read, path::Path, time::{Duration, SystemTime}};
-    use ::toml::Value;
     #[derive(Builder)]
     pub struct Action<'a> {
         manifest_path: &'a Path,
@@ -24,7 +23,7 @@ mod cargo_metadata {
             let mut manifest_str = String::new();
             let mut manifest_file = File::open(self.manifest_path)?;
             manifest_file.read_to_string(&mut manifest_str)?;
-            self.manifest = Some(Manifest::<Value>::from_slice(manifest_str.as_bytes())?);
+            self.manifest = Some(Manifest::from_slice(manifest_str.as_bytes())?);
             Ok(self.manifest.as_mut().and_then(|manifest| {
                 manifest.package.as_mut()
             }).and_then(|package| {
