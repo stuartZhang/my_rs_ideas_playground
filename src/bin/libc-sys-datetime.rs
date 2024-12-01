@@ -1,5 +1,5 @@
-use libc::{ errno_t, time_t, tm };
-use std::{ error::Error, io::Error as IoError, mem::MaybeUninit, ptr };
+use ::libc::{ errno_t, time_t, tm };
+use ::std::{ error::Error, io::Error as IoError, mem::MaybeUninit, ptr };
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut tm: MaybeUninit<tm> = MaybeUninit::uninit();
