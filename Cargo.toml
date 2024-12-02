@@ -13,6 +13,7 @@ lens-rs_generator = true
 [dependencies]
 ambassador = '0.3.5'
 async-std = '1.12.0'
+bytes = "1.9.0"
 cargo_toml = {version = '0.13.0', features = [], optional = true}
 deferred-future = { version = "0.1.4", features = ["local"] }
 delegate = '0.8.0'
