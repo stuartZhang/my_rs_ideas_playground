@@ -10,11 +10,11 @@ rustflags = [
     "-Wmissing_copy_implementations",
     "-Wmissing_debug_implementations",
     "-Wmissing_docs",
-    "-Wmust_not_suspend", # 与 #[must_not_suspend] 元属性配合使用。即，凡是被该元属性装饰的【类型】的实例，在异步函数/块内，都是不能跨跃`.await`点“存活”。而，必须在`.await`点之前被显示地释放（比如，代码块·或·显示地`drop()`）。
+    # "-Wmust_not_suspend", # 与 #[must_not_suspend] 元属性配合使用。即，凡是被该元属性装饰的【类型】的实例，在异步函数/块内，都是不能跨跃`.await`点“存活”。而，必须在`.await`点之前被显示地释放（比如，代码块·或·显示地`drop()`）。
     "-Dnon_ascii_idents",
-    "-Wnon_exhaustive_omitted_patterns", # 被强制添加的`_ => {...}`匹配条件分支何时真正地捕获到了被`sub crate`添加的新字段/枚举值了。
+    # "-Wnon_exhaustive_omitted_patterns", # 被强制添加的`_ => {...}`匹配条件分支何时真正地捕获到了被`sub crate`添加的新字段/枚举值了。
     "-Wnoop_method_call",
-    "-Dpointer_structural_match", # 在模式匹配内不能使用【函数指针】与【胖指针】
+    # "-Dpointer_structural_match", # 在模式匹配内不能使用【函数指针】与【胖指针】
     "-Drust_2021_incompatible_closure_captures", # `Rust 2021`对【结构体】变量的捕获粒度已经精细入【字段】了。但是，它（负面）影响了：（1）结构体多个字段的`drop`次序；（2）【字段】的数据类型并没实现【结构体】实现的`auto trait`（比如，`Send trait`），但我们还想该字段还能受到【结构体】的庇护。
     "-Wrust_2021_incompatible_or_patterns", # 规则宏定义中的`pat`说明符从`2021`版次开始，可匹配`|`了。为了保留旧语义，请使用`pat_param`说明符。
     "-Drust_2021_prefixes_incompatible_syntax",

@@ -1,3 +1,4 @@
+//! bytes crate 按块读取字节缓存
 use ::bytes::{ Buf, Bytes };
 use ::std::cmp;
 fn main() {
