@@ -1,7 +1,7 @@
 
 use ::rayon::prelude::*;
 
-fn is_prime(n: u64) -> bool {
+fn is_prime(n: u64) -> bool { // 自定义配合器
     if n <= 1 {
         return false;
     }
@@ -13,6 +13,5 @@ fn main() {
         .into_par_iter()
         .filter(|&x| is_prime(x))
         .collect();
-
     println!("Found {} primes", primes.len());
 }
