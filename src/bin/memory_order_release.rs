@@ -1,5 +1,5 @@
 #![feature(get_mut_unchecked)]
-mod string_sync {
+mod unsafe_string {
     use ::ambassador::{ Delegate, delegatable_trait_remote };
     use ::std::{ convert::{ AsRef, AsMut }, fmt::{ Display, Formatter, Result as IoResult }, ops::{ Deref, DerefMut } };
     #[delegatable_trait_remote]
@@ -9,37 +9,37 @@ mod string_sync {
     }
     #[derive(Delegate)]
     #[delegate(Display)]
-    pub struct StringSync(pub String);
-    unsafe impl Sync for StringSync { }
-    unsafe impl Send for StringSync { }
-    impl Deref for StringSync {
+    pub struct UnsafeString(pub String);
+    unsafe impl Sync for UnsafeString { }
+    unsafe impl Send for UnsafeString { }
+    impl Deref for UnsafeString {
         type Target = String;
         fn deref(&self) -> &Self::Target { &self.0 }
     }
-    impl DerefMut for StringSync {
+    impl DerefMut for UnsafeString {
         fn deref_mut(&mut self) -> &mut Self::Target { &mut self.0 }
     }
-    impl AsRef<String> for StringSync {
+    impl AsRef<String> for UnsafeString {
         fn as_ref(&self) -> &String { &self.0 }
     }
-    impl AsRef<str> for StringSync {
+    impl AsRef<str> for UnsafeString {
         fn as_ref(&self) -> &str { self.0.as_ref() }
     }
-    impl AsMut<String> for StringSync {
+    impl AsMut<String> for UnsafeString {
         fn as_mut(&mut self) -> &mut String { &mut self.0 }
     }
-    impl StringSync {
+    impl UnsafeString {
        pub fn new<T: AsRef<str>>(source: T) -> Self {
             Self(String::from(source.as_ref()))
        }
     }
 }
 use ::std::{ sync::{ Arc, atomic::{ AtomicU8, Ordering } }, thread };
-use string_sync::StringSync;
+use unsafe_string::UnsafeString;
 fn main() {
     // 信号量 - 同步线程
     let semaphore = Arc::new(AtomicU8::new(0));
-    let payload = Arc::new(StringSync::new("以字符串模拟复杂数据结构"));
+    let payload = Arc::new(UnsafeString::new("以字符串模拟复杂数据结构"));
     let mut join_handles = Vec::new();
     {
         let semaphore = Arc::clone(&semaphore);
