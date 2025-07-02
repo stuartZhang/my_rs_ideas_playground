@@ -60,7 +60,9 @@ fn main() {
         join_handles.push(thread::spawn(move || {
             let (lock, cvar) = semaphore.as_ref();
             let _ = lock.lock().and_then(|mut guard| {
-                guard = cvar.wait_while(guard, |&mut value| value != 1)?;
+                while *guard != 1 {
+                    guard = cvar.wait(guard)?;
+                }
                 // 能看到另一线程对复杂数据结构的非原子变量的修改结果。
                 // 注意：
                 // (1) 对复杂数据结构变量未加任何形式的锁哟！
