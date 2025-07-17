@@ -1,12 +1,12 @@
 use ::std::ffi::c_int;
 fn main() {
-    type Callback2 = extern "C" fn(c_int) -> c_int;
-    type Callback3 = extern "C" fn(Option<Callback2>, c_int) -> c_int;
-    // 导入 C 链接库的程序接口
+    type Callback2 = extern "C" fn(c_int) -> c_int; // 对应 C 端的 Callback2 类型定义
+    type Callback3 = extern "C" fn(Option<Callback2>, c_int) -> c_int; // 对应 C 端的 Callback3 类型定义
+    // 导入 C 端的‘回调函数注册’程序接口
     extern "C" {
         fn register1(cb: Option<Callback3>, a: c_int) -> c_int;
     }
-    // 向 C 链接库导出程序接口
+    // 待传值给 C 端的 C ABI 函数
     extern "C" fn callback3(process: Option<Callback2>, a: c_int) -> c_int {
         match process {
             Some(callback2) => callback2(a),
