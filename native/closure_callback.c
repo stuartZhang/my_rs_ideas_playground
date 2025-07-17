@@ -15,7 +15,7 @@ void add_two_numbers(int a, int b, Callback1 cb, void* closure)
 typedef int (*Callback2)(int a); // 对应 Rust 端的 Option<Callback2> 类型定义
 typedef int (*Callback3)(Callback2 cb2, int a); // 对应 Rust 端的 Option<Callback3> 类型定义
 
-int callback2(int result)
+static int callback2(int result)
 {
     return result + result;
 }
