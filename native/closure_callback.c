@@ -4,9 +4,14 @@
 //
 typedef void (*Callback1)(int result, void* closure);
 
-void add_two_numbers(int a, int b, Callback1 cb, void* closure)
+void add_two_numbers_by_val(int a, int b, Callback1 cb, void* closure)
 {
     int result = a + b;
+    cb(result, closure);
+}
+void add_two_numbers_by_ptr(int* a, int* b, Callback1 cb, void* closure)
+{
+    int result = *a + *b;
     cb(result, closure);
 }
 //

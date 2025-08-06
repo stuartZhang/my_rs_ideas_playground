@@ -10,13 +10,13 @@
  *      // 回调函数的函数签名。注意末尾形参 void *
  *      typedef void (*Callback)(int result, void *closure);
  *      // 导出函数的函数签名。注意末尾两个形参 Callback 和 void *
- *      void add_two_numbers(int a, int b, Callback cb, void *closure) {...}
+ *      void add_two_numbers_by_ptr(int* a, int* b, Callback cb, void *closure) {...}
  *    Rust 端
  *      ffi_closure_shim_fn!(
  *          // （被导入）外部函数名
- *          add_two_numbers(
+ *          add_two_numbers_by_ptr(
  *              // 形参列表内不包括末尾的 void * 参数，因为宏会自动为其添加上【回调·垫片·函数】
- *              a: c_int, b: c_int
+ *              a: *mut c_int, b: Option<&i32>
  *              // 注意双逗号分隔
  *              ,,
  *              // （被导出）回调函数。形参列表内也不包括末尾的 void * 参数，因为宏会自动为其添加上【回调·垫片·函数】
@@ -59,7 +59,7 @@ macro_rules! ffi_closure_shim_fn {
                 /**
                  * 【外部函数】
                  * 导入 C 端的功能函数 API
-                 * void add_two_numbers(int a, int b, Callback cb, void *closure)
+                 * void add_two_numbers_by_ptr(int* a, int* b, Callback cb, void *closure)
                  */
                 fn $c_fn_name(
                     $( $c_fn_param_name: $c_fn_param_type, )*
@@ -108,9 +108,11 @@ macro_rules! ffi_closure_shim_fn {
 fn main() {
     use libc::c_int;
     ffi_closure_shim_fn!(
-        add_two_numbers(a: c_int, b: c_int,, callback(result: c_int))
+        add_two_numbers_by_ptr(a: *mut c_int, b: Option<&i32>,, callback(result: c_int))
     );
     let mut got = 0;
-    add_two_numbers(1, 2, |result: c_int| got = result);
+    let param_a = Box::into_raw(Box::new(1));
+    let param_b = Some(&2);
+    add_two_numbers_by_ptr(param_a, param_b, |result: c_int| got = result);
     assert_eq!(got, 1 + 2);
 }
