@@ -1,9 +1,9 @@
-#![cfg_attr(all(feature = "cargo-metadata", not(feature = "toml-config")), feature(file_set_times))]
+#![cfg_attr(all(feature = "cargo_toml", not(feature = "toml")), feature(file_set_times))]
 #[path = "../utils.rs"]
 #[macro_use]
 mod utils;
 /// 【`Strategy`设计模式】的【依赖注入】项
-#[cfg(all(feature = "cargo-metadata", not(feature = "toml-config")))]
+#[cfg(all(feature = "cargo_toml", not(feature = "toml")))]
 mod cargo_metadata {
     use crate::TAction;
     use ::cargo_toml::{Manifest, Value};
@@ -69,7 +69,7 @@ mod cargo_metadata {
         }
     }
 }
-#[cfg(all(feature = "toml-config", not(feature = "cargo-metadata")))]
+#[cfg(all(feature = "toml", not(feature = "cargo_toml")))]
 mod toml_file {
     use crate::TAction;
     use ::derive_builder::Builder;
@@ -184,9 +184,9 @@ fn ioc_container<'a, T>(action: Option<T>) -> Result<(), Box<dyn Error>> where T
 main!{{
     let manifest_path = locate_cargo_manifest::locate_manifest();
     ioc_container(if let Ok(manifest_path) = manifest_path.as_ref() {
-        #[cfg(all(feature = "cargo-metadata", not(feature = "toml-config")))]
+        #[cfg(all(feature = "cargo_toml", not(feature = "toml")))]
         let action = cargo_metadata::ActionBuilder::default().manifest_path(manifest_path).build()?;
-        #[cfg(all(feature = "toml-config", not(feature = "cargo-metadata")))]
+        #[cfg(all(feature = "toml", not(feature = "cargo_toml")))]
         let action = toml_file::ActionBuilder::default().manifest_path(manifest_path).build()?;
         Some(action)
     } else {

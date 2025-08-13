@@ -1,8 +1,182 @@
 {
     "files.trimTrailingWhitespace": true,
+    "rust-analyzer.cargo.noDefaultFeatures": true,
+    "rust-analyzer.procMacro.attributes.enable": true,
+    "rust-playground-accelerator.mappings": {
+        "ambassador-local-struct.rs": {
+            "features": {
+                "required": ["ambassador", "derive_builder"],
+                "optional": ["ambassador-where"],
+                "defaultCount4Optional": 0
+            }
+        },
+        "ambassador-remote-struct.rs": {
+            "features": {
+                "required": ["ambassador", "derive_builder"],
+                "optional": ["ambassador-where"],
+                "defaultCount4Optional": 0
+            }
+        },
+        "ambassador-remote-trait.rs": {
+            "features": {
+                "required": ["ambassador", "derive_builder"],
+                "optional": ["ambassador-where"],
+                "defaultCount4Optional": 0
+            }
+        },
+        "ambassador-struct-enum.rs": {
+            "features": ["ambassador"]
+        },
+        "bytes-compat-std.rs": {
+            "features": ["bytes"]
+        },
+        "bytes-rc-clone.rs": {
+            "features": ["bytes"]
+        },
+        "bytes-read-by-chunks.rs": {
+            "features": ["bytes"]
+        },
+        "cargo-offline.rs": {
+            "features": {
+                "required": ["derive_builder", "locate-cargo-manifest"],
+                "optional": ["cargo_toml", "toml"]
+            }
+        },
+        "cacao-helloword.rs": {
+            "features": ["cacao"]
+        },
+        "delegate-enum.rs": {
+            "features": ["delegate", "derive_builder"]
+        },
+        "delegate-struct.rs": {
+            "features": ["async-std", "delegate", "derive_builder"]
+        },
+        "derive_builder-builder_core1.rs": {
+            "features": ["derive_builder", "serde", "serde_json"]
+        },
+        "derive_builder-builder_derive_attrs1.rs": {
+            "features": ["derive_builder", "serde", "serde_json"]
+        },
+        "derive_builder-builder_shape1.rs": {
+            "features": ["derive_builder"]
+        },
+        "derive_builder-builder_validate1.rs": {
+            "features": ["derive_builder"]
+        },
+        "derive_builder-field_custom1.rs": {
+            "features": ["derive_builder"]
+        },
+        "derive_builder-field_default1.rs": {
+            "features": ["derive_builder"]
+        },
+        "derive_builder-field_default_expr.rs": {
+            "features": ["derive_builder"]
+        },
+        "derive_builder-field_skip.rs": {
+            "features": ["derive_builder"]
+        },
+        "derive_builder-field_skip1.rs": {
+            "features": ["derive_builder"]
+        },
+        "derive_builder-field_visibility.rs": {
+            "features": ["derive_builder"]
+        },
+        "derive_builder-pattern_owned.rs": {
+            "features": ["derive_builder"]
+        },
+        "derive_builder-setter_custom1.rs": {
+            "features": ["derive_builder"]
+        },
+        "derive_builder-setter_generic1.rs": {
+            "features": ["derive_builder"]
+        },
+        "derive_builder-setter_strip_option1.rs": {
+            "features": ["derive_builder"]
+        },
+        "derive_builder-struct_generic1.rs": {
+            "features": ["derive_builder"]
+        },
+        "ffi-closure-callback-by-zst.rs": {
+            "features": ["cc", "libc"]
+        },
+        "ffi-closure-callback.rs": {
+            "features": ["cc", "libc"]
+        },
+        "ffi-nullable-pointer-optimization.rs": {
+            "features": ["cc"]
+        },
+        "futures-future-select.rs": {
+            "features": ["futures", "futures-time"]
+        },
+        "futures-localpool-try_run_one.rs": {
+            "features": ["futures", "futures-time"]
+        },
+        "futures-stream-flatten_unordered.rs": {
+            "features": ["futures"]
+        },
+        "futures-trystream-andthen.rs": {
+            "features": ["futures"]
+        },
+        "futures-trystream-flatten_unordered.rs": {
+            "features": ["futures"]
+        },
+        "futures-trystream-flatten.rs": {
+            "features": ["futures"]
+        },
+        "lens-basic.rs": {
+            "features": ["lens-rs"]
+        },
+        "lens-custom.rs": {
+            "features": ["lens-rs"]
+        },
+        "lens-row-polymorphism.rs": {
+            "features": ["lens-rs"]
+        },
+        "libc-sys-datetime.rs": {
+            "features": ["libc"]
+        },
+        "libc-sys-signal.rs": {
+            "features": ["libc"]
+        },
+        "libui-basic.rs": {
+            "features": ["libui"]
+        },
+        "libui-layout-builder1.rs": {
+            "features": ["libui"]
+        },
+        "memory_order_release_cold_yield.rs": {
+            "features": ["ambassador"]
+        },
+        "memory_order_release_hot_sleep.rs": {
+            "features": ["ambassador"]
+        },
+        "memory_order_release.rs": {
+            "features": ["ambassador"]
+        },
+        "rayon-custom-combinator.rs": {
+            "features": ["rayon"]
+        },
+        "rayon-quick-sort.rs": {
+            "features": ["rayon"]
+        },
+        "rayon-sum.rs": {
+            "features": ["rayon"]
+        },
+        "rayon-thread-pool.rs": {
+            "features": ["rayon"]
+        },
+        "spin_lock_cond_var.rs": {
+            "features": ["ambassador"]
+        },
+        "type-states-drone.rs": {
+            "features": ["async-std", "derive_builder", "embed-doc-image"]
+        },
+        "webview2-nwg.rs": {
+            "features": ["deferred-future", "futures", "nwg", "webview2", "winapi"]
+        }
+    },
     "rust-analyzer.cargo.features": [
-        "cargo-metadata",
-        "ambassador-where"
-    ],
-    "rust-analyzer.procMacro.attributes.enable": true
+        "cc",
+        "libc"
+    ]
 }
